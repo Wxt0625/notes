@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>庄园选点档案 · 第五人格监管者开局选点</title>
+<style>
+:root{
+  --bg:#0b0d12; --panel:rgba(21,26,36,.92); --panel2:#1b2230; --line:#2a3346;
+  --text:#e8e0cd; --muted:#8a94a8; --dim:#5a6577;
+  --gold:#c9a25f; --gold-d:#8e7a4a; --red:#8e2f3c; --red-l:#b04a58; --blue:#6f8fb8;
+  --out:cubic-bezier(.22,1,.36,1); --in:cubic-bezier(.64,0,.78,0);
+  --spring:cubic-bezier(.34,1.56,.64,1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--bg) url(assets/bg.jpg) center/cover fixed no-repeat;
+  color:var(--text); font:14px/1.6 "PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  min-height:100vh;
+}
+body::before{content:"";position:fixed;inset:0;background:rgba(11,13,18,.82);pointer-events:none}
+#app{position:relative;max-width:1120px;margin:0 auto;padding:0 20px 60px}
+.serif{font-family:"Noto Serif SC","Source Han Serif SC",STSong,SimSun,serif}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+.num{font-variant-numeric:tabular-nums}
+
+/* ---------- 顶栏 ---------- */
+header{display:flex;align-items:center;gap:12px;padding:18px 0 6px}
+header img.mark{width:44px;height:44px;border-radius:50%;object-fit:cover;border:1px solid var(--gold-d);box-shadow:0 0 0 2px rgba(201,162,95,.15)}
+header .t{flex:1}
+header h1{font-size:19px;font-weight:600;letter-spacing:2px}
+header p{font-size:11px;color:var(--dim);letter-spacing:3px}
+.linkbtn{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:6px 14px;transition:.25s var(--out)}
+.linkbtn:hover{color:var(--gold);border-color:var(--gold-d)}
+
+/* ---------- 进度 ---------- */
+#steps{display:flex;gap:6px;margin:14px 0 20px}
+#steps button{flex:1;display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--dim);font-size:12px;letter-spacing:1px;transition:.25s var(--out)}
+#steps button b{display:flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;border:1px solid currentColor;font-size:11px;font-weight:400}
+#steps button.on{color:var(--gold);border-color:var(--gold-d)}
+#steps button.done{color:var(--muted)}
+#steps button.done b{background:var(--gold);border-color:var(--gold);color:#14100a}
+
+/* ---------- 步骤转场 ---------- */
+.step{display:none}
+.step.show{display:block;animation:stepIn .24s var(--out)}
+@keyframes stepIn{from{opacity:0;transform:translateX(26px)}to{opacity:1;transform:none}}
+.stephead{display:flex;align-items:baseline;justify-content:space-between;margin:2px 2px 14px}
+.stephead h2{font-size:17px;font-weight:600;letter-spacing:2px}
+.stephead .hint{font-size:12px;color:var(--dim)}
+
+/* ---------- STEP1 地图卡 ---------- */
+#mapGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:860px){#mapGrid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){#mapGrid{grid-template-columns:1fr}}
+.mapcard{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel);text-align:left;transition:transform .28s var(--out),border-color .28s,box-shadow .28s}
+.mapcard:hover{transform:translateY(-4px);border-color:var(--gold-d);box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.mapcard .cover{display:block;width:100%;aspect-ratio:20/9;object-fit:cover;filter:saturate(.85) brightness(.9);transition:filter .3s,transform .45s var(--out)}
+.mapcard:hover .cover{filter:saturate(1) brightness(1.05);transform:scale(1.04)}
+.mapcard .meta{display:flex;align-items:baseline;justify-content:space-between;padding:10px 14px}
+.mapcard .name{font-size:15px;letter-spacing:3px}
+.mapcard .sub{font-size:11px;color:var(--dim)}
+.mapcard .check{position:absolute;top:10px;right:10px;width:22px;height:22px;border-radius:50%;background:var(--gold);color:#14100a;display:none;align-items:center;justify-content:center;font-size:13px}
+.mapcard.sel{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold-d),0 10px 30px rgba(0,0,0,.5)}
+.mapcard.sel .check{display:flex}
+
+/* ---------- STEP2 ---------- */
+#stage2{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start}
+@media(max-width:900px){#stage2{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px}
+.panel h3{font-size:12px;color:var(--muted);letter-spacing:2px;font-weight:500;margin-bottom:10px}
+#hunterSearch{width:100%;background:#0f131c;border:1px solid var(--line);border-radius:6px;color:var(--text);padding:8px 12px;font:inherit;margin-bottom:10px;outline:none;transition:border-color .2s}
+#hunterSearch:focus{border-color:var(--gold-d)}
+#hunterGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;max-height:308px;overflow-y:auto;scrollbar-width:thin}
+.hchip{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 2px;border-radius:8px;border:1px solid transparent;transition:.22s var(--out)}
+.hchip img{width:44px;height:44px;border-radius:50%;background:#0f131c;border:1px solid var(--line);transition:.22s var(--out);object-fit:cover}
+.hchip span{font-size:11px;color:var(--muted);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hchip:hover{border-color:var(--line);transform:translateY(-2px)}
+.hchip.sel{border-color:var(--gold-d);background:rgba(201,162,95,.08)}
+.hchip.sel img{border-color:var(--gold);box-shadow:0 0 0 2px rgba(201,162,95,.25)}
+.hchip.sel span{color:var(--gold)}
+#segrow{display:flex;gap:6px;margin-top:14px;flex-wrap:wrap}
+.seg{font-size:11px;color:var(--dim);border:1px solid var(--line);border-radius:20px;padding:4px 12px;transition:.2s}
+.seg.on{color:var(--gold);border-color:var(--gold-d);background:rgba(201,162,95,.08)}
+
+#board{display:grid;gap:6px;margin:0 auto;max-width:460px}
+.cell{position:relative;aspect-ratio:1;border:1px solid var(--line);border-radius:8px;background:#101521;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:border-color .2s,background .2s,transform .15s var(--spring)}
+.cell:hover{border-color:var(--gold-d);transform:scale(1.03)}
+.cell .coord{position:absolute;top:5px;left:7px;font-size:10px;color:var(--dim)}
+.cell .mk{width:56%;height:56%;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;animation:drop .38s var(--spring)}
+@keyframes drop{0%{transform:scale(1.7);opacity:0}60%{transform:scale(.92);opacity:1}100%{transform:scale(1)}}
+.cell .mk.s{background:var(--blue);color:#0b0d12}
+.cell .mk.m{background:var(--gold);color:#14100a}
+.cell.top1{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold-d),0 0 18px rgba(201,162,95,.18)}
+.cell.top1::after{content:"荐";position:absolute;bottom:5px;right:7px;font-size:10px;color:var(--gold)}
+.cell.top2{border-color:var(--gold-d)}
+#toolrow{display:flex;gap:6px;margin:12px 0;flex-wrap:wrap;align-items:center}
+#presets{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 8px;scrollbar-width:thin}
+.preset{flex:0 0 auto;display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);padding:6px 10px;transition:.2s}
+.preset:hover{border-color:var(--gold-d);transform:translateY(-1px)}
+.preset .meta{font-size:10px;color:var(--dim);line-height:1.35}
+.preset .meta b{color:var(--muted);font-weight:500}
+#step2foot{display:flex;align-items:center;gap:14px;margin-top:14px}
+#step2foot .hint{flex:1;font-size:12px;color:var(--dim)}
+.primary{background:linear-gradient(180deg,#d8b274,#b8925a);color:#14100a;font-weight:600;letter-spacing:2px;border-radius:8px;padding:11px 30px;box-shadow:0 4px 16px rgba(201,162,95,.25);transition:.2s var(--out)}
+.primary:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 22px rgba(201,162,95,.35)}
+.primary:active:not(:disabled){transform:translateY(1px)}
+.primary:disabled{opacity:.35;cursor:not-allowed}
+.ghost{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:8px;padding:10px 18px;transition:.2s}
+.ghost:hover{color:var(--gold);border-color:var(--gold-d)}
+
+/* ---------- STEP3 ---------- */
+#sealWrap{display:flex;flex-direction:column;align-items:center;padding:26px 0 8px}
+#seal{width:170px;height:auto;border-radius:50%;box-shadow:0 12px 40px rgba(0,0,0,.6);animation:slam .55s var(--spring);-webkit-mask-image:radial-gradient(circle,#000 60%,transparent 71%);mask-image:radial-gradient(circle,#000 60%,transparent 71%)}
+@keyframes slam{0%{transform:scale(1.9) rotate(-14deg);opacity:0}55%{transform:scale(.94) rotate(2deg);opacity:1}80%{transform:scale(1.03)}100%{transform:scale(1) rotate(0)}}
+#verdict{text-align:center;margin-top:18px;animation:rise .5s var(--out) .35s both}
+#verdict .cellname{font-size:44px;letter-spacing:4px;color:var(--gold);font-weight:600;line-height:1.2}
+#verdict .pct{font-size:20px;color:var(--text);margin-top:2px}
+#verdict .basis{font-size:12px;color:var(--muted);margin-top:8px;max-width:520px}
+#myCmp{margin:16px auto 0;max-width:460px;font-size:12px;color:var(--muted);border:1px dashed var(--line);border-radius:8px;padding:8px 14px;animation:rise .5s var(--out) .5s both}
+#myCmp b{color:var(--gold)}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+#alts{display:flex;gap:10px;justify-content:center;margin-top:20px;animation:rise .5s var(--out) .55s both}
+.alt{border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:8px 18px;text-align:center}
+.alt .c{font-size:17px;color:var(--text)}
+.alt .p{font-size:11px;color:var(--dim)}
+#step3foot{display:flex;gap:10px;justify-content:center;margin-top:24px;flex-wrap:wrap;animation:rise .5s var(--out) .65s both}
+details.appendix{max-width:860px;margin:26px auto 0;border:1px solid var(--line);border-radius:10px;background:var(--panel);animation:rise .5s var(--out) .75s both}
+details.appendix summary{cursor:pointer;list-style:none;padding:12px 18px;font-size:12px;letter-spacing:2px;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+details.appendix summary::-webkit-details-marker{display:none}
+details.appendix summary::after{content:"展开";font-size:11px;color:var(--dim);border:1px solid var(--line);border-radius:4px;padding:2px 8px}
+details[open].appendix summary::after{content:"收起"}
+.appendix .inner{padding:4px 18px 18px}
+#heatGrid{display:grid;gap:4px;max-width:380px;margin:10px auto}
+.hcell{aspect-ratio:1.4;border-radius:5px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;background:#101521}
+.hcell .c{color:var(--text)}
+.hcell .p{color:var(--dim);font-size:10px}
+#matchTable{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+#matchTable th,#matchTable td{padding:6px 8px;text-align:left;border-bottom:1px solid #1c2434}
+#matchTable th{color:var(--dim);font-weight:500;font-size:11px;letter-spacing:1px}
+#matchTable td{color:var(--muted)}
+
+/* ---------- 使用须知 ---------- */
+#notice{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(5,6,9,.7);z-index:50}
+#notice.show{display:flex;animation:fade .2s var(--out)}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+#notice .card{width:min(560px,92vw);max-height:82vh;overflow-y:auto;background:var(--panel);border:1px solid var(--gold-d);border-radius:12px;padding:26px 28px;animation:rise .3s var(--out)}
+#notice h2{font-size:16px;letter-spacing:3px;color:var(--gold);margin-bottom:14px}
+#notice h4{font-size:12px;color:var(--text);letter-spacing:1px;margin:14px 0 6px}
+#notice p,#notice li{font-size:12px;color:var(--muted)}
+#notice ul{padding-left:18px}
+#notice .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0}
+#notice .stats div{background:#101521;border-radius:8px;padding:8px;text-align:center}
+#notice .stats b{display:block;font-size:16px;color:var(--gold)}
+#notice .stats span{font-size:10px;color:var(--dim)}
+#noticeClose{margin-top:18px}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <img class="mark" src="assets/seal.jpg" alt="纹章">
+    <div class="t">
+      <h1 class="serif">庄园选点档案</h1>
+      <p>IDENTITY V · HUNTER SPAWN ARCHIVE</p>
+    </div>
+    <button class="linkbtn" id="noticeBtn">使用须知</button>
+  </header>
+
+  <nav id="steps">
+    <button data-step="1"><b>Ⅰ</b>选地图</button>
+    <button data-step="2"><b>Ⅱ</b>标站位</button>
+    <button data-step="3"><b>Ⅲ</b>看推荐</button>
+  </nav>
+
+  <!-- STEP 1 -->
+  <section class="step" id="s1">
+    <div class="stephead"><h2 class="serif">这局打哪张图？</h2><span class="hint">点选后直接进入下一步</span></div>
+    <div id="mapGrid"></div>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="step" id="s2">
+    <div class="stephead">
+      <h2 class="serif" id="s2title">标出你看到的开局站位</h2>
+      <span class="hint">白框 = 求生者 S1–S4，共点 4 格</span>
+    </div>
+    <div id="stage2">
+      <div class="panel">
+        <h3>监管者（可选）</h3>
+        <input id="hunterSearch" placeholder="搜索角色…" autocomplete="off">
+        <div id="hunterGrid"></div>
+        <div id="segrow"></div>
+      </div>
+      <div class="panel">
+        <h3>开局选点图 · <span id="mapName"></span></h3>
+        <div id="board"></div>
+        <div id="toolrow">
+          <button class="seg on" data-tool="survivor">标求生者</button>
+          <button class="seg" data-tool="mine">标我本想去的点</button>
+          <span style="flex:1"></span>
+          <button class="seg" id="randomBtn">随机抽一局</button>
+          <button class="seg" id="clearBtn">清空</button>
+        </div>
+        <div id="presets"></div>
+        <div id="step2foot">
+          <span class="hint" id="countHint"></span>
+          <button class="primary" id="to3" disabled>生成推荐</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="step" id="s3">
+    <div id="sealWrap">
+      <img id="seal" src="assets/seal.jpg" alt="火漆印">
+      <div id="verdict">
+        <div class="cellname serif num" id="vCell"></div>
+        <div class="pct num" id="vPct"></div>
+        <div class="basis" id="vBasis"></div>
+      </div>
+      <div id="myCmp" hidden></div>
+      <div id="alts"></div>
+    </div>
+    <div id="step3foot">
+      <button class="ghost" data-goto="2">改选点 / 换屠夫</button>
+      <button class="ghost" data-goto="1">换张地图</button>
+      <button class="ghost" id="againBtn">再随机抽一局</button>
+    </div>
+    <details class="appendix" id="appendix">
+      <summary>档案附录 · 热力与参考对局</summary>
+      <div class="inner">
+        <h3 style="font-size:12px;color:var(--muted);letter-spacing:2px;margin:6px 0">落点分布热力</h3>
+        <div id="heatGrid"></div>
+        <h3 style="font-size:12px;color:var(--muted);letter-spacing:2px;margin:14px 0 4px">参考对局</h3>
+        <table id="matchTable"><thead><tr><th>#</th><th>求生者站位</th><th>监管者落点</th><th>来源</th></tr></thead><tbody></tbody></table>
+      </div>
+    </details>
+  </section>
+</div>
+
+<!-- 使用须知 -->
+<div id="notice">
+  <div class="card">
+    <h2 class="serif">使用须知</h2>
+    <div class="stats" id="noticeStats"></div>
+    <h4>数据来源</h4>
+    <p>对局录像与高分段观战视频的开局选点截帧识别记录，经清洗剔除非正常与越界坐标条目。地图俯视图与角色头像素材来自 B 站第五人格维基（biligame wiki）。</p>
+    <h4>推荐逻辑</h4>
+    <ul>
+      <li>每张地图的求生者开局站位只有有限的固定组合；找到「站位完全相同」的历史对局 ≥3 局时，只统计这些对局中监管者的落点分布。</li>
+      <li>完全相同不足 3 局时，按站位重合格数对全部相似对局加权估算。</li>
+      <li>选定监管者后只统计该角色的对局；「不限」则统计全部角色。</li>
+    </ul>
+    <h4>重要边界</h4>
+    <ul>
+      <li>原始数据没有胜负标签，推荐含义是「高分段玩家在该局面下最常选的点」，不是胜率最优解。</li>
+      <li>不含段位、阵容、天赋信息；实战请结合阵容与个人能力判断。</li>
+      <li>本工具为玩家自制数据整理项目，与网易官方无关，仅供学习交流。</li>
+    </ul>
+    <button class="primary" id="noticeClose">知道了</button>
+  </div>
+</div>
+
+<script>
+const DATA = __DATA__;
+const MAPS = DATA.maps, HUNTERS = DATA.hunters, RECS = DATA.records, COLS = DATA.cols, META = DATA.meta;
+const FILTERS = [['all','全部数据'],['reviewed','仅人工审核'],['watch','仅观战'],['mine','仅本人录像']];
+const state = {step:1, map:-1, hunter:-1, filter:'all', input:[], myPick:null, tool:'survivor'};
+const $ = id => document.getElementById(id);
+const fmt = k => '(' + (k/10|0) + ',' + (k%10) + ')';
+const keyOf = s => s.slice().sort((a,b)=>a-b).join('-');
+
+/* ---------- 数据派生 ---------- */
+function pool(){
+  return RECS.filter(r => r[0]===state.map
+    && (state.hunter<0 || r[1]===state.hunter)
+    && (state.filter==='all' || (state.filter==='reviewed' && (r[7]&1))
+        || (state.filter==='watch' && !(r[7]&2)) || (state.filter==='mine' && (r[7]&2))));
+}
+function analyze(){
+  const p = pool(), cols = COLS[MAPS[state.map]];
+  const exact = p.filter(r => keyOf(r.slice(2,6)) === keyOf(state.input));
+  const score = {}, hCount = {};
+  if (exact.length >= 3){
+    exact.forEach(r => { score[r[6]]=(score[r[6]]||0)+1; hCount[r[6]]=(hCount[r[6]]||0)+1; });
+    const n = exact.length;
+    Object.keys(score).forEach(k => score[k]/=n);
+    return {mode:'exact', exactN:n, score, hCount, list:exact, cols, usedN:n};
+  }
+  const mine = keyOf(state.input).split('-').map(Number);
+  const used = [];
+  p.forEach(r => {
+    const s = r.slice(2,6);
+    const overlap = s.filter(v => mine.includes(v)).length;
+    if (!overlap) return;
+    const w = overlap*overlap;
+    score[r[6]] = (score[r[6]]||0) + w;
+    hCount[r[6]] = (hCount[r[6]]||0) + 1;
+    used.push(r);
+  });
+  const tot = Object.values(score).reduce((a,b)=>a+b,0) || 1;
+  Object.keys(score).forEach(k => score[k]/=tot);
+  return {mode:'fuzzy', exactN:exact.length, score, hCount, list:used, cols, usedN:used.length};
+}
+function topLayouts(){
+  const p = pool(), groups = {};
+  p.forEach(r => {
+    const k = keyOf(r.slice(2,6));
+    (groups[k] = groups[k] || {cells:r.slice(2,6), n:0, h:{}}).n++;
+    groups[k].h[r[6]] = (groups[k].h[r[6]]||0)+1;
+  });
+  return Object.values(groups).sort((a,b)=>b.n-a.n).slice(0,6).map(g => ({
+    cells:g.cells, n:g.n,
+    top:Object.entries(g.h).sort((a,b)=>b[1]-a[1])[0]
+  }));
+}
+
+/* ---------- 步骤控制 ---------- */
+function goto(n){
+  state.step = n;
+  document.querySelectorAll('.step').forEach(el => el.classList.remove('show'));
+  void $('s'+n).offsetWidth;
+  $('s'+n).classList.add('show');
+  document.querySelectorAll('#steps button').forEach((b,i) => {
+    b.classList.toggle('on', i+1===n);
+    b.classList.toggle('done', i+1<n);
+  });
+  if (n===2) renderStep2();
+  if (n===3) renderStep3();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+document.querySelectorAll('#steps button').forEach(b =>
+  b.addEventListener('click', () => {
+    const n = +b.dataset.step;
+    if (n===1 || (n===2 && state.map>=0) || (n===3 && state.input.length===4)) goto(n);
+  }));
+
+/* ---------- STEP 1 ---------- */
+function renderMaps(){
+  const counts = {};
+  RECS.forEach(r => { counts[r[0]] = (counts[r[0]]||0)+1; });
+  $('mapGrid').innerHTML = MAPS.map((m,i) =>
+    '<button class="mapcard'+(state.map===i?' sel':'')+'" data-i="'+i+'">'
+    + '<span class="check">✓</span>'
+    + '<img class="cover" src="assets/maps/'+m+'.jpg" alt="'+m+'" loading="lazy">'
+    + '<span class="meta"><span class="name serif">'+m+'</span>'
+    + '<span class="sub">'+(counts[i]||0)+' 局 · 3×'+COLS[m]+'</span></span></button>'
+  ).join('');
+  document.querySelectorAll('.mapcard').forEach(c =>
+    c.addEventListener('click', () => {
+      state.map = +c.dataset.i;
+      state.input = []; state.myPick = null;
+      renderMaps();
+      setTimeout(() => goto(2), 160);
+    }));
+}
+
+/* ---------- STEP 2 ---------- */
+function renderHunters(q){
+  q = (q||'').trim();
+  const list = HUNTERS.map((h,i)=>({h,i})).filter(x => !q || x.h.includes(q));
+  $('hunterGrid').innerHTML =
+    '<button class="hchip'+(state.hunter<0?' sel':'')+'" data-i="-1">'
+    + '<img src="assets/seal.jpg" alt="不限"><span>不限角色</span></button>'
+    + list.map(x =>
+      '<button class="hchip'+(state.hunter===x.i?' sel':'')+'" data-i="'+x.i+'">'
+      + '<img src="assets/hunters/'+x.h+'.png" alt="'+x.h+'" loading="lazy"><span>'+x.h+'</span></button>'
+    ).join('');
+  document.querySelectorAll('.hchip').forEach(c =>
+    c.addEventListener('click', () => {
+      state.hunter = +c.dataset.i;
+      renderHunters($('hunterSearch').value);
+      renderBoard(); renderPresets(); renderTitle();
+    }));
+}
+function renderTitle(){
+  const hn = state.hunter>=0 ? HUNTERS[state.hunter] : null;
+  $('s2title').textContent = (hn ? hn+' · ' : '') + MAPS[state.map] + ' · 标出开局站位';
+}
+function renderSegs(){
+  $('segrow').innerHTML = FILTERS.map(f =>
+    '<button class="seg'+(state.filter===f[0]?' on':'')+'" data-k="'+f[0]+'">'+f[1]+'</button>').join('');
+  document.querySelectorAll('#segrow .seg').forEach(b =>
+    b.addEventListener('click', () => {
+      state.filter = b.dataset.k;
+      renderSegs(); renderBoard(); renderPresets();
+    }));
+}
+function renderBoard(){
+  const cols = COLS[MAPS[state.map]];
+  $('board').style.gridTemplateColumns = 'repeat('+cols+',1fr)';
+  let top = null;
+  if (state.input.length===4){
+    try { top = Object.entries(analyze().score).sort((a,b)=>b[1]-a[1]).slice(0,2).map(x=>+x[0]); } catch(e){}
+  }
+  let html = '';
+  for(let r=1;r<=3;r++) for(let c=1;c<=cols;c++){
+    const k = r*10+c;
+    const si = state.input.indexOf(k);
+    let cls = 'cell', mk = '';
+    if (top && top[0]===k) cls += ' top1';
+    else if (top && top[1]===k) cls += ' top2';
+    if (si>=0) mk = '<span class="mk s">S'+(si+1)+'</span>';
+    else if (state.myPick===k) mk = '<span class="mk m">我</span>';
+    html += '<div class="'+cls+'" data-k="'+k+'"><span class="coord num">'+fmt(k)+'</span>'+mk+'</div>';
+  }
+  $('board').innerHTML = html;
+  document.querySelectorAll('#board .cell').forEach(el =>
+    el.addEventListener('click', () => {
+      const k = +el.dataset.k;
+      if (state.tool==='survivor'){
+        const i = state.input.indexOf(k);
+        if (i>=0) state.input.splice(i,1);
+        else if (state.input.length<4) state.input.push(k);
+      } else {
+        state.myPick = state.myPick===k ? null : k;
+      }
+      renderBoard(); updateCount();
+    }));
+  updateCount();
+}
+function updateCount(){
+  const n = state.input.length;
+  $('countHint').textContent = '已标记 '+n+' / 4 个求生者' + (state.myPick? ' · 备选 '+fmt(state.myPick) : '');
+  $('to3').disabled = n!==4;
+}
+function renderPresets(){
+  const list = topLayouts();
+  window._presets = list;
+  $('presets').innerHTML = list.map(g =>
+    '<button class="preset"><span class="meta"><b class="num">'+g.cells.map(fmt).join(' ')+'</b><br>'
+    + g.n+' 局 · 高手多选 '+fmt(+g.top[0])+'</span></button>'
+  ).join('');
+  document.querySelectorAll('.preset').forEach((b,i) =>
+    b.addEventListener('click', () => {
+      state.input = list[i].cells.slice();
+      renderBoard();
+    }));
+}
+function randomPick(){
+  const p = pool();
+  if (!p.length) return;
+  const r = p[Math.random()*p.length|0];
+  state.input = r.slice(2,6);
+  state.myPick = null;
+  renderBoard();
+}
+function renderStep2(){
+  $('mapName').textContent = MAPS[state.map];
+  renderTitle();
+  renderHunters($('hunterSearch').value);
+  renderSegs(); renderBoard(); renderPresets();
+}
+$('hunterSearch').addEventListener('input', e => renderHunters(e.target.value));
+document.querySelectorAll('#toolrow [data-tool]').forEach(b =>
+  b.addEventListener('click', () => {
+    state.tool = b.dataset.tool;
+    document.querySelectorAll('#toolrow [data-tool]').forEach(x =>
+      x.classList.toggle('on', x===b));
+  }));
+$('clearBtn').addEventListener('click', () => { state.input=[]; state.myPick=null; renderBoard(); });
+$('randomBtn').addEventListener('click', randomPick);
+$('to3').addEventListener('click', () => goto(3));
+
+/* ---------- STEP 3 ---------- */
+function renderStep3(){
+  const res = analyze();
+  const ranked = Object.entries(res.score).sort((a,b)=>b[1]-a[1]);
+  const top = +ranked[0][0];
+  const seal = $('seal'); seal.style.animation='none'; void seal.offsetWidth; seal.style.animation='';
+  $('vCell').textContent = fmt(top);
+  const pct = Math.round(res.score[top]*1000)/10;
+  $('vPct').textContent = pct + '%';
+  $('vBasis').innerHTML = res.mode==='exact'
+    ? '在 <b>'+res.exactN+'</b> 局站位<b>完全相同</b>的对局中，<b>'+Math.round(res.score[top]*res.exactN)+'</b> 局的监管者落在这里'
+    : '完全相同仅 '+res.exactN+' 局，已按站位重合格数对 <b>'+res.usedN+'</b> 局相似局面加权估算';
+  if (state.myPick){
+    const mine = state.myPick, minePct = Math.round((res.score[mine]||0)*1000)/10;
+    $('myCmp').hidden = false;
+    $('myCmp').innerHTML = '你原本想选 <b>'+fmt(mine)+'</b>（'+minePct+'%）'
+      + (mine===top ? ' · 与推荐一致' : ' · 推荐 '+fmt(top)+' 在历史对局中更常见');
+  } else $('myCmp').hidden = true;
+  $('alts').innerHTML = ranked.slice(1,3).map(x =>
+    '<div class="alt"><div class="c num">'+fmt(+x[0])+'</div><div class="p num">'+Math.round(x[1]*1000)/10+'%</div></div>'
+  ).join('');
+  const max = ranked[0] ? ranked[0][1] : 1;
+  let heat = '';
+  for(let r=1;r<=3;r++) for(let c=1;c<=res.cols;c++){
+    const k = r*10+c, v = res.score[k]||0;
+    const a = Math.min(.85, v/max*.85);
+    heat += '<div class="hcell" style="box-shadow:inset 0 0 0 999px rgba(201,162,95,'+a.toFixed(2)+')">'
+      + '<span class="c num">'+fmt(k)+'</span><span class="p num">'+Math.round(v*100)+'% · '+(res.hCount[k]||0)+'局</span></div>';
+  }
+  $('heatGrid').style.gridTemplateColumns = 'repeat('+res.cols+',1fr)';
+  $('heatGrid').innerHTML = heat;
+  document.querySelector('#matchTable tbody').innerHTML = res.list.slice(0,20).map((r,i) =>
+    '<tr><td class="num">'+(i+1)+'</td><td class="num">'+r.slice(2,6).map(fmt).join(' ')+'</td>'
+    + '<td class="num" style="color:var(--gold)">'+fmt(r[6])+'</td>'
+    + '<td>'+((r[7]&2)?'本人录像':'观战')+((r[7]&1)?' · 已审核':'')+'</td></tr>'
+  ).join('');
+}
+document.querySelectorAll('#step3foot [data-goto]').forEach(b =>
+  b.addEventListener('click', () => goto(+b.dataset.goto)));
+$('againBtn').addEventListener('click', () => { randomPick(); goto(3); });
+
+/* ---------- 使用须知 ---------- */
+$('noticeStats').innerHTML =
+  '<div><b class="num">'+META.kept+'</b><span>有效对局</span></div>'
+  + '<div><b class="num">'+MAPS.length+'</b><span>地图</span></div>'
+  + '<div><b class="num">'+HUNTERS.length+'</b><span>监管者</span></div>'
+  + '<div><b class="num">'+META.reviewed+'</b><span>人工审核</span></div>';
+$('noticeBtn').addEventListener('click', () => $('notice').classList.add('show'));
+$('noticeClose').addEventListener('click', () => $('notice').classList.remove('show'));
+$('notice').addEventListener('click', e => { if(e.target===$('notice')) $('notice').classList.remove('show'); });
+
+/* ---------- 启动 ---------- */
+renderMaps();
+goto(1);
+</script>
+</body>
+</html>

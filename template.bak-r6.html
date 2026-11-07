@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>庄园选点档案</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700;900&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0a09; --bg3:#1a1714; --line:#3a332a; --line2:#5c4e3a;
+  --text:#ddd3bd; --muted:#9a8f7a; --dim:#655c4e;
+  --gold:#c9a25f; --gold-d:#8e7a4a; --red:#8e2f3c; --red-l:#b04a58; --blue:#6f8fb8;
+  --out:cubic-bezier(.22,1,.36,1); --spring:cubic-bezier(.34,1.56,.64,1);
+  --cut:10px; --f1:12px; --f2:15px; --f3:64px;
+  --serif:"Noto Serif SC","Source Han Serif SC",STSong,SimSun,serif;
+  --hand:"Ma Shan Zheng","STKaiti","KaiTi",serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font:var(--f1)/1.6 "PingFang SC","Microsoft YaHei",system-ui,sans-serif;overflow:hidden}
+#fx{position:fixed;inset:0;pointer-events:none;background:url(assets/bg.jpg) center/cover;filter:saturate(.7) brightness(.85)}
+#fx::before{content:"";position:absolute;inset:0;background:
+  radial-gradient(ellipse 60% 45% at 50% 0%,rgba(201,162,95,.10),transparent 70%),
+  radial-gradient(ellipse 70% 40% at 50% 100%,rgba(111,143,184,.10),transparent 70%),
+  radial-gradient(ellipse at 50% 50%,rgba(11,10,9,.25) 30%,rgba(11,10,9,.88) 100%)}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+.num{font-variant-numeric:tabular-nums;font-family:var(--serif)}
+.cut{clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,0 100%,0 var(--cut))}
+.fr{position:relative}
+.fr::before{content:"";position:absolute;inset:0;border:1px solid var(--line2);clip-path:inherit;pointer-events:none;z-index:4}
+.dark{background:rgba(16,14,12,.84)}
+.k{font-family:var(--serif);font-size:var(--f1);letter-spacing:5px;color:var(--muted)}
+
+/* ---------- 外框 ---------- */
+#app{position:relative;height:100vh;height:100dvh;display:grid;grid-template-rows:52px minmax(0,1fr);grid-template-columns:84px minmax(0,1fr)}
+#bar{grid-column:1/-1;position:relative;display:flex;align-items:center;gap:16px;padding:0 20px;background:rgba(11,10,9,.72);border-bottom:1px solid var(--line)}
+#bar::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;background:linear-gradient(90deg,transparent,var(--gold-d) 25%,var(--gold-d) 75%,transparent);opacity:.6}
+#backBtn{display:flex;align-items:center;color:var(--muted);padding:6px;transition:color .2s}
+#backBtn svg{width:20px;height:20px}
+#backBtn:hover{color:var(--gold)}
+#backBtn[disabled]{opacity:.2;cursor:default}
+#bar .ttl{font-family:var(--serif);font-size:var(--f2);font-weight:700;letter-spacing:4px}
+#ctx{font-family:var(--serif);font-size:var(--f2);color:var(--gold);letter-spacing:4px;display:flex;align-items:center}
+#ctx:not(:empty)::before{content:"";width:1px;height:16px;background:var(--line2);margin-right:16px}
+#bar .sp{flex:1}
+.gbtn{font-family:var(--serif);font-size:var(--f1);letter-spacing:3px;color:var(--muted);padding:7px 16px;background:rgba(26,23,20,.9);--cut:7px;transition:color .2s,background .2s}
+.gbtn:hover{color:var(--gold);background:#262017}
+.gbtn:hover::before{border-color:var(--gold-d)}
+.gbtn.on{color:var(--gold)}
+.gbtn.on::before{border-color:var(--gold)}
+#noticeBtn svg{display:none;width:18px;height:18px}
+
+#steps{display:flex;flex-direction:column;padding:16px 0;background:rgba(11,10,9,.6);border-right:1px solid var(--line)}
+#steps button{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:16px 0 14px;color:var(--dim);font-family:var(--serif);font-size:var(--f1);letter-spacing:3px;transition:color .2s,background .2s}
+#steps button b{font-size:22px;font-weight:700;line-height:1;letter-spacing:0}
+#steps button:hover{color:var(--muted)}
+#steps button.done{color:var(--gold-d)}
+#steps button.on{color:var(--gold);background:linear-gradient(90deg,transparent,rgba(201,162,95,.1))}
+#steps button.on::after{content:"";position:absolute;right:-1px;top:12px;bottom:12px;width:2px;background:var(--gold);box-shadow:0 0 8px var(--gold)}
+#steps .lock{opacity:.35;cursor:default}
+
+#stage{position:relative;min-height:0}
+.step{display:none;position:absolute;inset:0;padding:22px 26px 24px}
+.step.show{display:block;animation:stepIn .22s var(--out)}
+@keyframes stepIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+
+/* ---------- ① 地图 ---------- */
+#mapGrid{height:100%;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,minmax(0,1fr));gap:16px}
+.mapcard{--cut:16px;overflow:hidden;background:#000;text-align:left}
+.mapcard img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(.8) brightness(.68);transition:filter .25s,transform .35s var(--out)}
+.mapcard::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 45%,transparent 40%,rgba(8,7,6,.75) 100%),linear-gradient(0deg,rgba(8,7,6,.9) 0,transparent 45%);pointer-events:none}
+.mapcard .name{position:absolute;left:22px;bottom:14px;z-index:3;font-family:var(--serif);font-size:26px;font-weight:900;letter-spacing:6px;color:var(--text);text-shadow:0 2px 6px #000;transition:color .2s}
+.mapcard .tag{position:absolute;right:16px;bottom:18px;z-index:3;font-family:var(--serif);font-size:var(--f1);color:var(--muted);letter-spacing:1px}
+.mapcard:hover img{filter:saturate(1) brightness(.92);transform:scale(1.04)}
+.mapcard:hover::before,.mapcard.sel::before{border-color:var(--gold);box-shadow:inset 0 0 26px rgba(201,162,95,.25)}
+.mapcard:hover .name,.mapcard.sel .name{color:var(--gold)}
+
+/* ---------- ② 选点 ---------- */
+#stage2{height:100%;display:grid;grid-template-columns:minmax(0,1fr) clamp(360px,25vw,440px);gap:18px}
+#boardPanel{min-height:0;display:flex;flex-direction:column}
+#rightCol{min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:14px;scrollbar-width:thin;scrollbar-color:var(--line2) transparent}
+.card{--cut:12px;padding:16px 20px}
+.card>.k{margin-bottom:10px}
+#emptyHint{font-family:var(--serif);font-size:var(--f2);letter-spacing:3px;color:var(--dim);padding:8px 0 4px}
+.vsep{width:1px;align-self:stretch;margin:12px 4px;background:var(--line2)}
+#strip{display:flex;align-items:center;gap:14px;padding-bottom:12px;margin-bottom:14px;border-bottom:1px solid var(--line)}
+#hSlot{--cut:7px;background:rgba(26,23,20,.9);display:flex;margin-left:6px;align-items:center;gap:10px;padding:2px 12px 2px 2px;transition:background .2s}
+#hSlot:hover{background:#262017}
+#hSlot:hover::before{border-color:var(--gold)}
+#hSlot:hover b,#hSlot:hover i{color:var(--gold)}
+#hSlot .av{width:32px;height:32px;border-radius:50%;overflow:hidden;box-shadow:0 0 0 2px var(--red),0 0 0 4px rgba(11,10,9,.9),0 0 0 5px var(--gold-d)}
+#hSlot .av img{width:100%;height:100%;object-fit:cover;object-position:top}
+#hSlot b{font-family:var(--serif);font-size:var(--f2);letter-spacing:3px;font-weight:700}
+#hSlot i{font-style:normal;color:var(--muted);font-size:var(--f2);line-height:1;margin-left:2px;transition:color .2s}
+#pips{margin-left:auto;display:flex;gap:8px;align-items:center}
+#pips span{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--line2);font-family:var(--serif);font-size:var(--f1);line-height:19px;text-align:center;color:transparent;transition:.2s}
+#pips span.on{border-color:var(--blue);background:#141a22;color:var(--blue)}
+
+.boardWrap{flex:1;min-height:0;container-type:size;display:flex;align-items:center;justify-content:center}
+.board{position:relative;width:min(100cqw,calc(100cqh * var(--ar)));aspect-ratio:var(--ar);background:#000;box-shadow:0 0 0 1px var(--gold-d),0 0 0 5px rgba(11,10,9,.6),0 18px 50px rgba(0,0,0,.7)}
+.board::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,transparent 55%,rgba(8,7,6,.42) 100%);pointer-events:none}
+.board .bimg{position:absolute;inset:0;width:100%;height:100%;filter:saturate(.95) brightness(1.08) contrast(1.1)}
+.cell{position:absolute;display:flex;align-items:center;justify-content:center;border:1px solid rgba(201,162,95,.32);cursor:pointer;z-index:1;transition:background .15s,border-color .15s}
+.cell:hover{background:rgba(221,211,189,.13);border-color:rgba(201,162,95,.9);box-shadow:inset 0 0 18px rgba(201,162,95,.25)}
+.cell .coord{position:absolute;top:6px;left:8px;font-family:var(--serif);font-size:var(--f1);color:var(--text);opacity:0;transition:opacity .15s;text-shadow:0 1px 3px #000}
+.cell:hover .coord{opacity:.75}
+.cell.alt{border-color:rgba(176,74,88,.85);background:rgba(142,47,60,.12);z-index:2}
+.cell.alt .pc{position:absolute;top:6px;right:8px;font-family:var(--serif);font-size:var(--f1);color:#e7b9bf;text-shadow:0 1px 3px #000}
+.cell.win{border-color:var(--red-l);background:rgba(142,47,60,.22);z-index:3}
+
+.sv{width:clamp(30px,22%,58px);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 50% 35%,#222a35,#0e1116);box-shadow:0 0 0 2px var(--blue),0 0 0 3px rgba(0,0,0,.6),0 4px 10px rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-weight:700;font-size:clamp(13px,1.3vw,22px);color:#dfe7f2;animation:drop .38s var(--spring)}
+@keyframes drop{0%{transform:scale(1.7);opacity:0}60%{transform:scale(.92);opacity:1}100%{transform:scale(1)}}
+.win .sv{position:absolute;left:10%;bottom:10%;width:clamp(24px,16%,40px);font-size:var(--f1);z-index:2}
+.hm{position:relative;width:clamp(48px,42%,116px);aspect-ratio:1;border-radius:50%;overflow:hidden;background:#1a0e10;box-shadow:0 0 0 3px var(--red),0 0 0 5px rgba(0,0,0,.65),0 0 0 6px var(--gold-d),0 0 30px rgba(176,74,88,.55);animation:slam .5s var(--spring) both}
+.hm img{width:100%;height:100%;object-fit:cover;object-position:top}
+.hm.seal img{object-position:center;transform:scale(1.4)}
+@keyframes slam{0%{transform:scale(2.2) rotate(-10deg);opacity:0}55%{transform:scale(.93);opacity:1}80%{transform:scale(1.04)}100%{transform:scale(1)}}
+.mine{width:clamp(30px,24%,60px);aspect-ratio:1;border:2px dashed var(--red-l);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#e7b9bf;font-family:var(--hand);font-size:clamp(16px,1.6vw,26px);text-shadow:0 1px 3px #000}
+
+/* 档案卡 */
+#dossier{--cut:16px;flex:none;display:flex;flex-direction:column;padding:20px 22px 18px}
+#vMain{display:flex;align-items:baseline;gap:18px;margin-top:6px}
+#vCell{font-family:var(--serif);font-size:var(--f3);font-weight:900;line-height:1.1;color:var(--gold)}
+#vPct{font-family:var(--serif);font-size:var(--f3);font-weight:700;line-height:1.1;color:#d6c6a0}
+#vMain.wait #vCell,#vMain.wait #vPct{color:var(--line2)}
+#vMain.go #vCell{animation:rise .24s var(--out) .25s both}
+#vMain.go #vPct{animation:rise .24s var(--out) .32s both}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+#vBasis{font-size:var(--f1);color:var(--muted);margin-top:6px;letter-spacing:1px}
+#vBasis em{font-style:normal;color:var(--red-l);margin-left:10px}
+.row{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row>.k{margin-right:4px;min-width:3em}
+.alt2{display:flex;align-items:baseline;gap:8px;padding:4px 12px;border:1px solid rgba(176,74,88,.6)}
+.alt2 b{font-family:var(--serif);font-size:var(--f2);color:var(--text)}
+.alt2 span{font-family:var(--serif);font-size:var(--f1);color:var(--muted)}
+#myCmp{font-family:var(--serif);font-size:var(--f2);color:var(--muted)}
+#myCmp s{color:var(--red-l);text-decoration-thickness:2px}
+#myCmp b{color:var(--gold)}
+#presets{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;width:100%}
+.preset{display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 4px 3px;border:1px solid var(--line);background:rgba(26,23,20,.6);transition:border-color .15s}
+.preset:hover{border-color:var(--gold-d)}
+.mini{display:grid;gap:2px;width:100%}
+.mini i{aspect-ratio:1;border:1px solid var(--line2)}
+.mini i.on{background:var(--blue);border-color:var(--blue)}
+.preset small{font-family:var(--serif);font-size:var(--f1);color:var(--muted);line-height:1.2}
+#tools{padding-top:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+#tools .gbtn{padding:8px 0}
+details.appendix{flex:none}
+details.appendix summary{cursor:pointer;list-style:none;padding:0;font-family:var(--serif);font-size:var(--f1);letter-spacing:4px;color:var(--gold-d);display:flex;justify-content:space-between}
+details.appendix summary::-webkit-details-marker{display:none}
+details.appendix summary::after{content:"＋";color:var(--muted)}
+details[open].appendix summary::after{content:"－"}
+.appendix .inner{padding:6px 0 4px}
+#aBasis{color:var(--muted);margin-bottom:8px}
+#heatGrid{display:grid;gap:3px;margin:6px 0 12px}
+.hcell{aspect-ratio:1.5;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg3);border:1px solid var(--line);font-family:var(--serif);font-size:var(--f1);line-height:1.3}
+.hcell .p{color:var(--muted)}
+#matchTable{width:100%;border-collapse:collapse;font-size:var(--f1)}
+#matchTable th,#matchTable td{padding:4px 6px;text-align:left;border-bottom:1px solid var(--line)}
+#matchTable th{color:var(--dim);font-weight:500}
+#matchTable td{color:var(--muted)}
+
+/* ---------- 浮层 ---------- */
+.overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(5,4,3,.8);z-index:50}
+.overlay.show{display:flex;animation:fade .18s var(--out)}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.pop{--cut:16px;animation:rise .22s var(--out)}
+#hunterPop .pop{width:min(760px,94vw);max-height:86vh;display:flex;flex-direction:column;padding:18px 20px 20px}
+.popHead{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.popHead .k{color:var(--gold)}
+#hunterSearch{flex:1;max-width:220px;margin-left:auto;background:transparent;border:none;border-bottom:1px solid var(--line2);color:var(--text);padding:4px 2px;font:inherit;outline:none}
+#hunterSearch:focus{border-color:var(--gold)}
+#hunterSearch::placeholder{color:var(--dim)}
+#hunterGrid{min-height:0;overflow-y:auto;display:grid;grid-template-columns:repeat(8,1fr);gap:12px 8px;padding:4px;scrollbar-width:thin;scrollbar-color:var(--line2) transparent}
+.hchip{display:flex;flex-direction:column;align-items:center;gap:6px}
+.hchip .av{width:100%;max-width:68px;aspect-ratio:1;border-radius:50%;overflow:hidden;box-shadow:0 0 0 1px var(--line2);transition:box-shadow .2s}
+.hchip img{width:100%;height:100%;object-fit:cover;object-position:top;filter:grayscale(.6) brightness(.75);transition:filter .2s}
+.hchip span{font-size:var(--f1);color:var(--muted);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.hchip:hover img{filter:none}
+.hchip:hover .av{box-shadow:0 0 0 2px var(--red)}
+.hchip.sel .av{box-shadow:0 0 0 2px var(--red),0 0 0 4px rgba(0,0,0,.7),0 0 0 5px var(--gold)}
+.hchip.sel img{filter:none}
+.hchip.sel span{color:var(--gold)}
+#segrow{display:flex;margin-top:16px;border:1px solid var(--line2)}
+.seg{flex:1;font-family:var(--serif);font-size:var(--f1);color:var(--dim);border-right:1px solid var(--line2);padding:6px 0;letter-spacing:2px;transition:color .2s,background .2s}
+.seg:last-child{border-right:none}
+.seg:hover{color:var(--muted)}
+.seg.on{color:#17120a;background:var(--gold-d)}
+
+#notice .pop{width:min(500px,92vw);padding:24px 26px 22px}
+#notice .stats{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line2);margin:14px 0}
+#notice .stats div{padding:8px 4px;text-align:center;border-right:1px solid var(--line2)}
+#notice .stats div:last-child{border-right:none}
+#notice .stats b{display:block;font-size:var(--f2);color:var(--gold);font-family:var(--serif)}
+#notice .stats span{font-size:var(--f1);color:var(--dim)}
+#notice ul{list-style:none}
+#notice li{position:relative;padding:6px 0 6px 16px;font-size:var(--f1);color:var(--muted);border-bottom:1px solid var(--line)}
+#notice li:last-child{border-bottom:none}
+#notice li::before{content:"";position:absolute;left:2px;top:13px;width:5px;height:5px;background:var(--red-l);transform:rotate(45deg)}
+.primary{display:block;margin:18px auto 0;font-family:var(--serif);font-size:var(--f2);font-weight:700;letter-spacing:8px;color:#f0e2c2;padding:9px 34px 9px 42px;background:var(--red);--cut:10px;transition:background .2s,box-shadow .2s}
+.primary::before{content:"";position:absolute;inset:3px;border:1px solid rgba(240,226,194,.45);clip-path:polygon(7px 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%,0 7px);pointer-events:none}
+.primary:hover{background:var(--red-l);box-shadow:0 0 20px rgba(176,74,88,.5)}
+
+/* ---------- 窄屏 ---------- */
+@media(max-width:1100px){
+  #mapGrid{grid-template-columns:repeat(2,1fr);grid-template-rows:none;grid-auto-rows:minmax(150px,1fr);height:auto}
+  .step{overflow-y:auto}
+}
+@media(max-width:900px){
+  :root{--f3:44px}
+  body{overflow:auto}
+  #app{height:auto;min-height:100vh;grid-template-columns:1fr;grid-template-rows:48px auto auto}
+  #bar{position:sticky;top:0;z-index:5;padding:0 10px;gap:10px;background:rgba(11,10,9,.95)}
+  #bar .ttl{letter-spacing:2px}
+  #bar.ctxOn .ttl{display:none}
+  #ctx:not(:empty)::before{display:none}
+  #steps{flex-direction:row;padding:0;border-right:none;border-bottom:1px solid var(--line)}
+  #steps button{flex:1;flex-direction:row;justify-content:center;gap:8px;padding:9px 0}
+  #steps button b{font-size:var(--f2)}
+  #steps button.on::after{right:24px;left:24px;top:auto;bottom:-1px;width:auto;height:2px}
+  .step{position:static;overflow:visible;padding:10px 10px 24px}
+  #mapGrid{grid-auto-rows:120px;gap:10px}
+  .mapcard{--cut:10px}
+  .mapcard .name{left:10px;bottom:6px;font-size:var(--f2);letter-spacing:3px}
+  .mapcard .tag{right:8px;bottom:8px}
+  #stage2{height:auto;grid-template-columns:1fr;gap:10px}
+  #hSlot{margin-left:auto;padding-right:4px}
+  #hSlot .av{width:28px;height:28px}
+  #hSlot b{font-size:var(--f1);letter-spacing:1px}
+  #bar.ctxOn .sp{display:none}
+  #noticeBtn{padding:6px 8px}
+  #noticeBtn .txt{display:none}
+  #noticeBtn svg{display:block}
+  #rightCol{overflow:visible}
+  #boardPanel{padding:4px 2px}
+  .boardWrap{container-type:inline-size;flex:none}
+  .board{width:100%}
+  #dossier{padding:16px 14px}
+  #presets{grid-template-columns:repeat(6,1fr);gap:4px}
+  #hunterGrid{grid-template-columns:repeat(5,1fr);gap:8px 6px}
+  #hunterPop .pop{padding:14px 12px}
+  #notice .pop{padding:18px 16px}
+}
+@media (hover:none){.cell .coord{display:none}}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+<div id="fx"></div>
+<div id="app">
+  <header id="bar">
+    <button id="backBtn" aria-label="返回"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 4 7 12l8 8"/></svg></button>
+    <div class="ttl">庄园选点档案</div>
+    <div id="ctx"></div>
+    <button id="hSlot" class="fr cut" hidden><span class="av"><img alt=""></span><b></b><i>▾</i></button>
+    <span class="sp"></span>
+    <button class="gbtn fr cut" id="noticeBtn" aria-label="须知"><span class="txt">须知</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg></button>
+  </header>
+
+  <nav id="steps">
+    <button data-step="1"><b>Ⅰ</b>地图</button>
+    <button data-step="2"><b>Ⅱ</b>选点</button>
+  </nav>
+
+  <main id="stage">
+  <section class="step" id="s1"><div id="mapGrid"></div></section>
+
+  <section class="step" id="s2">
+    <div id="stage2">
+      <div id="boardPanel">
+        <div class="boardWrap"><div id="board" class="board"></div></div>
+      </div>
+      <div id="rightCol">
+      <div id="dossier" class="dark fr cut">
+        <div id="emptyHint">点选 4 个求生者区域</div>
+        <div id="verdict">
+          <div class="k">首选落点</div>
+          <div id="vMain" class="wait"><span id="vCell" class="num">—</span><i class="vsep"></i><span id="vPct" class="num"></span></div>
+          <div id="vBasis"></div>
+        </div>
+        <div class="row" id="altRow" hidden><span class="k">候补</span><span id="alts" style="display:contents"></span></div>
+        <div class="row" id="mineRow"><span class="k">备选</span><span id="myCmp"></span></div>
+        <div id="tools">
+          <button class="gbtn fr cut" id="mineBtn">标备选</button>
+          <button class="gbtn fr cut" id="randomBtn">随机</button>
+          <button class="gbtn fr cut" id="clearBtn">清空</button>
+        </div>
+      </div>
+      <div id="presetRow" class="card dark fr cut"><div class="k">常见站位</div><div id="presets"></div></div>
+        <details class="appendix card dark fr cut" id="appendix">
+          <summary>档案附录</summary>
+          <div class="inner">
+            <div id="aBasis"></div>
+            <div id="heatGrid"></div>
+            <table id="matchTable"><thead><tr><th>#</th><th>求生者</th><th>落点</th><th>来源</th></tr></thead><tbody></tbody></table>
+          </div>
+        </details>
+      </div>
+    </div>
+  </section>
+  </main>
+</div>
+
+<div id="hunterPop" class="overlay">
+  <div class="pop dark fr cut">
+    <div class="popHead"><span class="k">监管者</span><input id="hunterSearch" placeholder="搜索" autocomplete="off"></div>
+    <div id="hunterGrid"></div>
+    <div id="segrow"></div>
+  </div>
+</div>
+
+<div id="notice" class="overlay">
+  <div class="pop dark fr cut">
+    <div class="k" style="color:var(--gold)">使用须知</div>
+    <div class="stats" id="noticeStats"></div>
+    <ul>
+      <li>来源：高分段对局录像开局截帧，素材取自 biligame wiki。</li>
+      <li>逻辑：同站位 ≥3 局按实际分布，不足则按重合格数加权。</li>
+      <li>推荐为「最常选」，不等于胜率最优。</li>
+      <li>玩家自制，与网易官方无关。</li>
+    </ul>
+    <button class="primary fr cut" id="noticeClose">确认</button>
+  </div>
+</div>
+
+<script>
+const DATA = __DATA__;
+const GEO = {"不归林": {"ar": 1.032, "cells": {"11": [0.22, 0.23, 33.41, 33.33], "21": [0.22, 33.33, 33.41, 33.33], "31": [0.22, 66.44, 33.41, 33.33], "12": [33.41, 0.23, 33.41, 33.33], "22": [33.41, 33.33, 33.41, 33.33], "32": [33.41, 66.44, 33.41, 33.33], "13": [66.59, 0.23, 33.19, 33.33], "23": [66.59, 33.33, 33.19, 33.33], "33": [66.59, 66.44, 33.19, 33.33]}}, "军工厂": {"ar": 1.1436, "cells": {"11": [0.23, 0.26, 33.33, 33.16], "21": [0.23, 33.16, 33.33, 33.42], "31": [0.23, 66.32, 33.33, 33.42], "12": [33.33, 0.26, 33.56, 33.16], "22": [33.33, 33.16, 33.56, 33.42], "32": [33.33, 66.32, 33.56, 33.42], "13": [66.67, 0.26, 33.11, 33.16], "23": [66.67, 33.16, 33.11, 33.42], "33": [66.67, 66.32, 33.11, 33.42]}}, "唐人街": {"ar": 1.1492, "cells": {"11": [0.23, 0.26, 33.49, 33.25], "21": [0.23, 33.25, 33.49, 33.51], "31": [0.23, 66.49, 33.49, 33.25], "12": [33.49, 0.26, 33.26, 33.25], "22": [33.49, 33.25, 33.26, 33.51], "32": [33.49, 66.49, 33.26, 33.25], "13": [66.51, 0.26, 33.26, 33.25], "23": [66.51, 33.25, 33.26, 33.51], "33": [66.51, 66.49, 33.26, 33.25]}}, "圣心医院": {"ar": 1.0761, "cells": {"11": [0.24, 0.25, 33.25, 33.5], "21": [0.24, 33.5, 33.25, 33.25], "31": [0.24, 66.5, 33.25, 33.25], "12": [33.25, 0.25, 35.38, 33.5], "22": [33.25, 33.5, 35.38, 33.25], "32": [33.25, 66.5, 35.38, 33.25], "13": [68.4, 0.25, 31.37, 33.5], "23": [68.4, 33.5, 31.37, 33.25], "33": [68.4, 66.5, 31.37, 33.25]}}, "月亮河公园": {"ar": 1.7122, "cells": {"11": [0.21, 0.36, 25.0, 33.09], "21": [0.21, 33.09, 25.0, 33.45], "31": [0.21, 66.19, 25.0, 33.45], "12": [25.0, 0.36, 25.42, 33.09], "22": [25.0, 33.09, 25.42, 33.45], "32": [25.0, 66.19, 25.42, 33.45], "13": [50.21, 0.36, 25.0, 33.09], "23": [50.21, 33.09, 25.0, 33.45], "33": [50.21, 66.19, 25.0, 33.45], "14": [75.0, 0.36, 24.79, 33.09], "24": [75.0, 33.09, 24.79, 33.45], "34": [75.0, 66.19, 24.79, 33.45]}}, "永眠镇": {"ar": 0.9433, "cells": {"11": [0.3, 0.28, 33.33, 33.14], "21": [0.3, 33.14, 33.33, 33.43], "31": [0.3, 66.29, 33.33, 33.43], "12": [33.33, 0.28, 33.63, 33.14], "22": [33.33, 33.14, 33.63, 33.43], "32": [33.33, 66.29, 33.63, 33.43], "13": [66.67, 0.28, 33.03, 33.14], "23": [66.67, 33.14, 33.03, 33.43], "33": [66.67, 66.29, 33.03, 33.43]}}, "湖景村": {"ar": 1.1572, "cells": {"11": [0.27, 0.31, 25.0, 33.33], "21": [0.27, 33.33, 25.0, 33.33], "31": [0.27, 66.35, 25.0, 33.33], "12": [25.0, 0.31, 25.27, 33.33], "22": [25.0, 33.33, 25.27, 33.33], "32": [25.0, 66.35, 25.27, 33.33], "13": [50.0, 0.31, 24.73, 33.33], "23": [50.0, 33.33, 24.73, 33.33], "33": [50.0, 66.35, 24.73, 33.33], "14": [74.46, 0.31, 25.27, 33.33], "24": [74.46, 33.33, 25.27, 33.33], "34": [74.46, 66.35, 25.27, 33.33]}}, "红教堂": {"ar": 1.0645, "cells": {"11": [0.25, 8.06, 33.33, 30.65], "21": [0.25, 38.44, 33.33, 30.91], "31": [0.25, 69.09, 33.33, 30.65], "12": [33.33, 4.3, 33.33, 30.65], "22": [33.33, 34.68, 33.33, 31.18], "32": [33.33, 65.59, 33.33, 30.91], "13": [66.41, 0.27, 33.33, 30.65], "23": [66.41, 30.65, 33.33, 31.18], "33": [66.41, 61.56, 33.33, 30.65]}}, "里奥的回忆": {"ar": 1.1379, "cells": {"11": [0.23, 0.27, 33.1, 33.16], "21": [0.23, 33.16, 33.1, 33.69], "31": [0.23, 66.58, 33.1, 33.16], "12": [33.1, 0.27, 33.57, 33.16], "22": [33.1, 33.16, 33.57, 33.69], "32": [33.1, 66.58, 33.57, 33.16], "13": [66.43, 0.27, 33.33, 33.16], "23": [66.43, 33.16, 33.33, 33.69], "33": [66.43, 66.58, 33.33, 33.16]}}};
+const MAPS = DATA.maps, HUNTERS = DATA.hunters, RECS = DATA.records, COLS = DATA.cols, META = DATA.meta;
+const FILTERS = [['all','全部'],['reviewed','已审核'],['watch','观战'],['mine','本人录像']];
+const state = {step:1, map:-1, hunter:-1, filter:'all', input:[], myPick:null, tool:'survivor'};
+const $ = id => document.getElementById(id);
+const fmt = k => '(' + (k/10|0) + ',' + (k%10) + ')';
+const keyOf = s => s.slice().sort((a,b)=>a-b).join('-');
+const gimg = m => 'assets/maps/'+m+'_grid.jpg';
+const hImg = i => i<0 ? 'assets/seal.jpg' : 'assets/hunters/'+HUNTERS[i]+'.png';
+const store = {
+  get(k){ try { return localStorage.getItem('ivp.'+k); } catch(e){ return null; } },
+  set(k,v){ try { localStorage.setItem('ivp.'+k, v); } catch(e){} }
+};
+(function restore(){
+  const h = HUNTERS.indexOf(store.get('hunter')); if (h>=0) state.hunter = h;
+  const f = store.get('filter'); if (FILTERS.some(x => x[0]===f)) state.filter = f;
+})();
+
+/* ---------- 数据派生 ---------- */
+function pool(){
+  return RECS.filter(r => r[0]===state.map
+    && (state.hunter<0 || r[1]===state.hunter)
+    && (state.filter==='all' || (state.filter==='reviewed' && (r[7]&1))
+        || (state.filter==='watch' && !(r[7]&2)) || (state.filter==='mine' && (r[7]&2))));
+}
+/* 游戏规定双方不重复选区：剔除当前求生者已占格，剩余格按权重重新归一化（全被剔除时 score 为空，上层走无匹配） */
+function normFree(score){
+  state.input.forEach(k => { delete score[k]; });
+  const tot = Object.values(score).reduce((a,b)=>a+b,0) || 1;
+  Object.keys(score).forEach(k => score[k]/=tot);
+}
+function analyze(){
+  const p = pool(), cols = COLS[MAPS[state.map]];
+  const exact = p.filter(r => keyOf(r.slice(2,6)) === keyOf(state.input));
+  const score = {}, hCount = {};
+  if (exact.length >= 3){
+    exact.forEach(r => { score[r[6]]=(score[r[6]]||0)+1; hCount[r[6]]=(hCount[r[6]]||0)+1; });
+    const n = exact.length;
+    normFree(score);
+    return {mode:'exact', exactN:n, score, hCount, list:exact, cols, usedN:n};
+  }
+  const mine = keyOf(state.input).split('-').map(Number);
+  const used = [];
+  p.forEach(r => {
+    const s = r.slice(2,6);
+    const overlap = s.filter(v => mine.includes(v)).length;
+    if (!overlap) return;
+    const w = overlap*overlap;
+    score[r[6]] = (score[r[6]]||0) + w;
+    hCount[r[6]] = (hCount[r[6]]||0) + 1;
+    used.push(r);
+  });
+  normFree(score);
+  return {mode:'fuzzy', exactN:exact.length, score, hCount, list:used, cols, usedN:used.length};
+}
+function topLayouts(){
+  const p = pool(), groups = {};
+  p.forEach(r => {
+    const k = keyOf(r.slice(2,6));
+    (groups[k] = groups[k] || {cells:r.slice(2,6), n:0, h:{}}).n++;
+    groups[k].h[r[6]] = (groups[k].h[r[6]]||0)+1;
+  });
+  return Object.values(groups).sort((a,b)=>b.n-a.n).slice(0,6).map(g => ({
+    cells:g.cells, n:g.n,
+    top:Object.entries(g.h).sort((a,b)=>b[1]-a[1])[0]
+  }));
+}
+
+/* ---------- 步骤控制 ---------- */
+function renderCtx(){
+  $('ctx').textContent = state.step===2 && state.map>=0 ? MAPS[state.map] : '';
+  $('bar').classList.toggle('ctxOn', state.step===2);
+  $('hSlot').hidden = state.step!==2;
+}
+function goto(n){
+  state.step = n;
+  document.querySelectorAll('.step').forEach(el => el.classList.remove('show'));
+  void $('s'+n).offsetWidth;
+  $('s'+n).classList.add('show');
+  document.querySelectorAll('#steps button').forEach((b,i) => {
+    b.classList.toggle('on', i+1===n);
+    b.classList.toggle('done', i+1<n);
+    b.classList.toggle('lock', i+1===2 && state.map<0);
+  });
+  $('backBtn').disabled = n===1;
+  if (n===2) renderStep2();
+  renderCtx();
+  window.scrollTo({top:0});
+}
+document.querySelectorAll('#steps button').forEach(b =>
+  b.addEventListener('click', () => {
+    const n = +b.dataset.step;
+    if (n===1 || state.map>=0) goto(n);
+  }));
+$('backBtn').addEventListener('click', () => { if (state.step>1) goto(1); });
+
+/* ---------- STEP 1 ---------- */
+function renderMaps(){
+  const counts = {};
+  RECS.forEach(r => { counts[r[0]] = (counts[r[0]]||0)+1; });
+  $('mapGrid').innerHTML = MAPS.map((m,i) =>
+    '<button class="mapcard fr cut'+(state.map===i?' sel':'')+'" data-i="'+i+'">'
+    + '<img src="'+gimg(m)+'" alt="'+m+'">'
+    + '<span class="name">'+m+'</span>'
+    + '<span class="tag">'+(counts[i]||0)+' 局</span></button>'
+  ).join('');
+  document.querySelectorAll('.mapcard').forEach(c =>
+    c.addEventListener('click', () => {
+      const i = +c.dataset.i;
+      if (i!==state.map){ state.input = []; state.myPick = null; }
+      state.map = i;
+      renderMaps();
+      setTimeout(() => goto(2), 140);
+    }));
+}
+
+/* ---------- 监管者弹层 ---------- */
+function renderSlot(){
+  $('hSlot').querySelector('img').src = hImg(state.hunter);
+  $('hSlot').querySelector('b').textContent = state.hunter>=0 ? HUNTERS[state.hunter] : '不限';
+}
+function renderHunters(q){
+  q = (q||'').trim();
+  const list = HUNTERS.map((h,i)=>({h,i})).filter(x => !q || x.h.includes(q));
+  const chip = (i, name) => '<button class="hchip'+(state.hunter===i?' sel':'')+'" data-i="'+i+'">'
+    + '<span class="av"><img src="'+hImg(i)+'" alt="'+name+'" loading="lazy"></span><span>'+name+'</span></button>';
+  $('hunterGrid').innerHTML = chip(-1,'不限') + list.map(x => chip(x.i, x.h)).join('');
+  document.querySelectorAll('.hchip').forEach(c =>
+    c.addEventListener('click', () => {
+      state.hunter = +c.dataset.i;
+      store.set('hunter', state.hunter>=0 ? HUNTERS[state.hunter] : '');
+      $('hunterPop').classList.remove('show');
+      renderSlot(); renderAll();
+    }));
+}
+function renderSegs(){
+  $('segrow').innerHTML = FILTERS.map(f =>
+    '<button class="seg'+(state.filter===f[0]?' on':'')+'" data-k="'+f[0]+'">'+f[1]+'</button>').join('');
+  document.querySelectorAll('#segrow .seg').forEach(b =>
+    b.addEventListener('click', () => {
+      state.filter = b.dataset.k;
+      store.set('filter', state.filter);
+      renderSegs(); renderAll();
+    }));
+}
+$('hSlot').addEventListener('click', () => {
+  $('hunterSearch').value = '';
+  renderHunters(''); renderSegs();
+  $('hunterPop').classList.add('show');
+});
+$('hunterPop').addEventListener('click', e => { if (e.target===$('hunterPop')) $('hunterPop').classList.remove('show'); });
+$('hunterSearch').addEventListener('input', e => renderHunters(e.target.value));
+
+/* ---------- STEP 2 ---------- */
+function renderBoard(res){
+  const m = MAPS[state.map], g = GEO[m];
+  const b = $('board');
+  b.style.setProperty('--ar', g.ar);
+  let top = null, alts = [], pctOf = () => 0;
+  if (res){
+    const ranked = Object.entries(res.score).sort((a,b)=>b[1]-a[1]);
+    top = ranked.length ? +ranked[0][0] : null;
+    alts = ranked.slice(1,3).map(x => +x[0]);
+    pctOf = k => Math.round((res.score[k]||0)*1000)/10;
+  }
+  let html = '<img class="bimg" src="'+gimg(m)+'" alt="'+m+'">';
+  Object.entries(g.cells).forEach(([k, r]) => {
+    k = +k;
+    const si = state.input.indexOf(k);
+    let cls = 'cell', inner = '<span class="coord">'+fmt(k)+'</span>';
+    if (k===top){
+      cls += ' win';
+      inner += '<span class="hm'+(state.hunter<0?' seal':'')+'"><img src="'+hImg(state.hunter)+'" alt="荐"></span>';
+    } else if (alts.includes(k)){ cls += ' alt'; inner += '<span class="pc">'+pctOf(k)+'%</span>'; }
+    if (si>=0) inner += '<span class="sv">'+(si+1)+'</span>';
+    else if (state.myPick===k) inner += '<span class="mine">我</span>';
+    html += '<div class="'+cls+'" data-k="'+k+'" style="left:'+r[0]+'%;top:'+r[1]+'%;width:'+r[2]+'%;height:'+r[3]+'%">'+inner+'</div>';
+  });
+  b.innerHTML = html;
+  b.querySelectorAll('.cell').forEach(el =>
+    el.addEventListener('click', () => {
+      const k = +el.dataset.k;
+      if (state.tool==='mine'){
+        state.myPick = state.myPick===k ? null : k;
+        state.tool = 'survivor'; $('mineBtn').classList.remove('on');
+      } else {
+        const i = state.input.indexOf(k);
+        if (i>=0) state.input.splice(i,1);
+        else if (state.input.length<4) state.input.push(k);
+      }
+      renderAll();
+    }));
+}
+function miniGrid(cells, cols){
+  let h = '';
+  for(let r=1;r<=3;r++) for(let c=1;c<=cols;c++) h += '<i'+(cells.includes(r*10+c)?' class="on"':'')+'></i>';
+  return '<span class="mini" style="grid-template-columns:repeat('+cols+',1fr)">'+h+'</span>';
+}
+function renderPresets(){
+  const list = topLayouts(), cols = COLS[MAPS[state.map]];
+  window._presets = list;
+  $('presetRow').hidden = !list.length;
+  $('presets').innerHTML = list.map(g =>
+    '<button class="preset" title="'+g.cells.map(fmt).join(' ')+'">'+miniGrid(g.cells, cols)+'<small class="num">'+g.n+'</small></button>'
+  ).join('');
+  document.querySelectorAll('.preset').forEach((b,i) =>
+    b.addEventListener('click', () => {
+      state.input = list[i].cells.slice();
+      renderAll();
+    }));
+}
+function renderVerdict(res){
+  const vm = $('vMain');
+  if (!res){
+    vm.className = 'wait';
+    $('verdict').hidden = true; $('emptyHint').hidden = false; $('emptyHint').textContent = state.input.length===4 ? '无匹配对局 · 可换监管者或数据范围' : '点选 4 个求生者区域'; $('mineRow').hidden = !state.myPick;
+    $('vCell').textContent = '—'; $('vPct').textContent = '';
+    $('vBasis').textContent = '';
+    $('altRow').hidden = true;
+    $('appendix').hidden = true;
+  } else {
+    const ranked = Object.entries(res.score).sort((a,b)=>b[1]-a[1]);
+    const top = +ranked[0][0], pctOf = k => Math.round((res.score[k]||0)*1000)/10;
+    $('verdict').hidden = false; $('emptyHint').hidden = true; $('mineRow').hidden = false;
+    vm.className = ''; void vm.offsetWidth; vm.className = 'go';
+    $('vCell').textContent = fmt(top);
+    $('vPct').textContent = pctOf(top)+'%';
+    $('vBasis').innerHTML = (res.mode==='exact' ? '同站位 '+res.exactN+' 局实测' : '相似局 '+res.usedN+' 局加权') + (res.usedN<=3 ? '<em>样本少</em>' : '');
+    const alts = ranked.slice(1,3);
+    $('altRow').hidden = !alts.length;
+    $('alts').innerHTML = alts.map(x => '<span class="alt2"><b>'+fmt(+x[0])+'</b><span>'+pctOf(+x[0])+'%</span></span>').join('');
+    $('appendix').hidden = false;
+    $('aBasis').textContent = res.mode==='exact'
+      ? '在 '+res.exactN+' 局站位完全相同的对局中，'+(res.hCount[top]||0)+' 局的监管者落在 '+fmt(top)+'。'
+      : '完全相同仅 '+res.exactN+' 局，已按站位重合格数对 '+res.usedN+' 局相似局面加权估算。';
+    const max = ranked[0][1];
+    let heat = '';
+    for(let r=1;r<=3;r++) for(let c=1;c<=res.cols;c++){
+      const k = r*10+c, v = res.score[k]||0, a = Math.min(.85, v/max*.85);
+      heat += '<div class="hcell" style="box-shadow:inset 0 0 0 999px rgba(142,47,60,'+a.toFixed(2)+')">'
+        + '<span>'+fmt(k)+'</span><span class="p">'+Math.round(v*100)+'% · '+(res.hCount[k]||0)+'局</span></div>';
+    }
+    $('heatGrid').style.gridTemplateColumns = 'repeat('+res.cols+',1fr)';
+    $('heatGrid').innerHTML = heat;
+    document.querySelector('#matchTable tbody').innerHTML = res.list.slice(0,20).map((r,i) =>
+      '<tr><td class="num">'+(i+1)+'</td><td class="num">'+r.slice(2,6).map(fmt).join(' ')+'</td>'
+      + '<td class="num" style="color:var(--gold)">'+fmt(r[6])+'</td>'
+      + '<td>'+((r[7]&2)?'本人录像':'观战')+((r[7]&1)?' · 已审核':'')+'</td></tr>'
+    ).join('');
+  }
+  if (!state.myPick) $('myCmp').innerHTML = '<span style="color:var(--dim)">未标</span>';
+  else if (!res) $('myCmp').innerHTML = '<b class="num">'+fmt(state.myPick)+'</b>';
+  else {
+    const ranked = Object.entries(res.score).sort((a,b)=>b[1]-a[1]), top = +ranked[0][0];
+    const p = Math.round((res.score[state.myPick]||0)*1000)/10;
+    $('myCmp').innerHTML = state.myPick===top
+      ? '<b class="num">'+fmt(state.myPick)+'</b> 与首选一致'
+      : '<s class="num">'+fmt(state.myPick)+'</s> <span class="num">'+p+'%</span>';
+  }
+}
+function renderAll(){
+  let res = null;
+  if (state.input.length===4){ res = analyze(); if (!Object.keys(res.score).length) res = null; }
+  const was = state._rev; state._rev = !!res;
+  renderBoard(res); renderVerdict(res); renderPresets();
+  if (res && !was && innerWidth<=900){
+    const d = $('dossier').getBoundingClientRect().top + scrollY;
+    window.scrollTo({top:Math.max(0, d - innerHeight + 190), behavior:'smooth'});
+  }
+}
+function randomPick(){
+  const p = pool();
+  if (!p.length) return;
+  const r = p[Math.random()*p.length|0];
+  state.input = r.slice(2,6);
+  state.myPick = null;
+  renderAll();
+}
+function renderStep2(){ renderSlot(); renderAll(); }
+$('mineBtn').addEventListener('click', () => {
+  state.tool = state.tool==='mine' ? 'survivor' : 'mine';
+  $('mineBtn').classList.toggle('on', state.tool==='mine');
+});
+$('clearBtn').addEventListener('click', () => { state.input=[]; state.myPick=null; renderAll(); });
+$('randomBtn').addEventListener('click', randomPick);
+
+/* ---------- 须知 ---------- */
+$('noticeStats').innerHTML =
+  '<div><b class="num">'+META.kept+'</b><span>有效对局</span></div>'
+  + '<div><b class="num">'+MAPS.length+'</b><span>地图</span></div>'
+  + '<div><b class="num">'+HUNTERS.length+'</b><span>监管者</span></div>'
+  + '<div><b class="num">'+META.reviewed+'</b><span>人工审核</span></div>';
+$('noticeBtn').addEventListener('click', () => $('notice').classList.add('show'));
+$('noticeClose').addEventListener('click', () => $('notice').classList.remove('show'));
+$('notice').addEventListener('click', e => { if(e.target===$('notice')) $('notice').classList.remove('show'); });
+
+/* ---------- 启动 ---------- */
+renderMaps();
+goto(1);
+</script>
+</body>
+</html>
