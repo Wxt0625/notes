@@ -2,9 +2,9 @@
 """
 从「最终数据整合/CSV」生成单文件网页 index.html。
 
-用法：python build_data.py
-输入：C:\\Users\\...\\Desktop\\最终数据整合\\CSV\\*.csv
-输出：H:\\iv-picker\\index.html（数据内嵌，可离线打开、可直接发布）
+用法：python build_data.py（可在任意目录运行，路径以本脚本所在目录为基准）
+输入：<脚本目录>\\CSV\\*.csv
+输出：<脚本目录>\\index.html（数据内嵌，可离线打开、可直接发布）
 
 数据口径：
   1. 只保留「状态 = ok」且五个坐标齐全、坐标未越界的记录；
@@ -18,10 +18,10 @@ import json
 import os
 import re
 
-CSV_DIR = r"C:\Users\Administrator.DESKTOP-FQKEPFK\Desktop\最终数据整合\CSV"
-OUT_DIR = r"H:\iv-picker"
-TEMPLATE = os.path.join(OUT_DIR, "template.html")
-OUTPUT = os.path.join(OUT_DIR, "index.html")
+BASE = os.path.dirname(os.path.abspath(__file__))
+CSV_DIR = os.path.join(BASE, "CSV")
+TEMPLATE = os.path.join(BASE, "template.html")
+OUTPUT = os.path.join(BASE, "index.html")
 
 # 3x4 地图（其余按 3x3 处理）
 COLS4 = {"湖景村", "月亮河公园"}
