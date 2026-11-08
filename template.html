@@ -35,7 +35,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 .k{font-family:var(--serif);font-size:var(--f1);letter-spacing:5px;color:var(--muted)}
 
 /* ---------- 外框 ---------- */
-#app{position:relative;height:100vh;height:100dvh;display:grid;grid-template-rows:52px minmax(0,1fr);grid-template-columns:84px minmax(0,1fr)}
+#app{position:relative;height:100vh;height:100dvh;display:grid;grid-template-rows:52px minmax(0,1fr) auto;grid-template-columns:84px minmax(0,1fr)}
 #bar{grid-column:1/-1;position:relative;display:flex;align-items:center;gap:16px;padding:0 20px;background:rgba(11,10,9,.72);border-bottom:1px solid var(--line)}
 #bar::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;background:linear-gradient(90deg,transparent,var(--gold-d) 25%,var(--gold-d) 75%,transparent);opacity:.6}
 #backBtn{display:flex;align-items:center;color:var(--muted);padding:6px;transition:color .2s}
@@ -184,11 +184,6 @@ details[open].appendix summary::after{content:"－"}
 .hchip.sel .av{box-shadow:0 0 0 2px var(--red),0 0 0 4px rgba(0,0,0,.7),0 0 0 5px var(--gold)}
 .hchip.sel img{filter:none}
 .hchip.sel span{color:var(--gold)}
-#segrow{display:flex;margin-top:16px;border:1px solid var(--line2)}
-.seg{flex:1;font-family:var(--serif);font-size:var(--f1);color:var(--dim);border-right:1px solid var(--line2);padding:6px 0;letter-spacing:2px;transition:color .2s,background .2s}
-.seg:last-child{border-right:none}
-.seg:hover{color:var(--muted)}
-.seg.on{color:#17120a;background:var(--gold-d)}
 
 #notice .pop{width:min(500px,92vw);padding:24px 26px 22px}
 #notice .stats{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line2);margin:14px 0}
@@ -226,7 +221,7 @@ details[open].appendix summary::after{content:"－"}
 }
 /* ---------- 手机/平板竖屏共用：页签并入返回键（侧栏隐藏），顶栏紧凑，处理安全区 ---------- */
 @media (max-width:1023px),(max-height:500px){
-  #app{grid-template-columns:minmax(0,1fr);grid-template-rows:calc(48px + env(safe-area-inset-top)) minmax(0,1fr)}
+  #app{grid-template-columns:minmax(0,1fr);grid-template-rows:calc(48px + env(safe-area-inset-top)) minmax(0,1fr) auto}
   #steps{display:none}
   #bar{padding:env(safe-area-inset-top) max(10px,env(safe-area-inset-right)) 0 max(10px,env(safe-area-inset-left));gap:8px}
   #bar .ttl{letter-spacing:2px;white-space:nowrap}
@@ -281,7 +276,7 @@ details[open].appendix summary::after{content:"－"}
 /* ---------- 手机竖屏：整页滚动，揭晓前常见站位紧跟棋盘 ---------- */
 @media (max-width:767px) and (min-height:501px){
   body{overflow:auto}
-  #app{height:auto;min-height:100dvh;grid-template-rows:calc(48px + env(safe-area-inset-top)) auto}
+  #app{height:auto;min-height:100dvh;grid-template-rows:calc(48px + env(safe-area-inset-top)) minmax(auto,1fr) auto}
   #bar{position:sticky;top:0;z-index:5;background:rgba(11,10,9,.95)}
   .step{position:static;overflow:visible}
   #mapGrid{grid-template-columns:repeat(2,1fr)}
@@ -297,7 +292,7 @@ details[open].appendix summary::after{content:"－"}
 }
 /* ---------- 手机横屏：棋盘靠左按高度撑满，右栏内滚 ---------- */
 @media (max-height:500px){
-  #app{grid-template-rows:calc(44px + env(safe-area-inset-top)) minmax(0,1fr)}
+  #app{grid-template-rows:calc(44px + env(safe-area-inset-top)) minmax(0,1fr) auto}
   .step{padding-top:8px;padding-bottom:calc(8px + env(safe-area-inset-bottom))}
   #s2{overflow:hidden}
   #mapGrid{grid-template-columns:repeat(3,1fr)}
@@ -314,7 +309,7 @@ details[open].appendix summary::after{content:"－"}
   html{touch-action:manipulation}
   #backBtn,#noticeBtn{min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center}
   #hSlot{min-height:44px}
-  .gbtn,.seg,.primary{min-height:44px;min-width:44px}
+  .gbtn,.primary{min-height:44px;min-width:44px}
   .preset{min-height:44px;min-width:44px}
   details.appendix summary{min-height:44px;align-items:center}
 }
@@ -329,7 +324,6 @@ details[open].appendix summary::after{content:"－"}
 .hchip span{font-size:16px}
 .hchip.sel .av{box-shadow:0 0 0 3px var(--gold),0 0 0 6px rgba(0,0,0,.7),0 0 18px rgba(201,162,95,.6)}
 .hchip.sel span{color:var(--gold);font-weight:700}
-.seg{min-height:44px;font-size:16px}
 @media (max-width:1023px),(max-height:500px){
   #hSlot .av{width:32px;height:32px}
   #hSlot b,#hSlot i{font-size:var(--f2)}
@@ -346,6 +340,51 @@ details[open].appendix summary::after{content:"－"}
 }
 @media (max-height:500px){#hunterGrid{grid-template-columns:repeat(auto-fill,minmax(80px,1fr))} #hunterPop .pop{max-height:94dvh}}
 @media (max-width:380px) and (min-height:501px){#hSlot b{display:none}}
+
+/* ---------- 页脚 ---------- */
+#siteFooter{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 16px;padding:6px max(20px,env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left));background:rgba(11,10,9,.86);border-top:1px solid var(--line2)}
+.footerLinks,.footerContact,.footerAuthors{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px}
+.footerContact{align-items:baseline;font-size:calc(var(--f1) + 1px);color:#ead9b4}
+.footerContact b,.footerAuthors b{color:#e2bd7a;font-family:var(--serif);font-weight:700;font-size:calc(var(--f1) + 1px)}
+.footerContactDetails{display:grid;grid-template-columns:auto auto;gap:2px 8px}
+#siteFooter .gbtn{padding:4px 10px;letter-spacing:1px;font-size:calc(var(--f1) + 1px);color:#ead9b4}
+#siteFooter .gbtn:hover{color:#fff0d0}
+#siteFooter :disabled{opacity:.7;cursor:default}
+.footerAuthors{gap:6px}
+.authorLink{display:inline-grid;place-items:center;width:34px;min-height:32px}
+.authorLink svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+#siteFooter :focus-visible,.footerDialog :focus-visible{outline:2px solid var(--gold);outline-offset:-3px}
+.footerDialog{position:fixed;inset:0;margin:auto;width:min(540px,92vw);max-height:80vh;max-height:80dvh;overflow:auto;padding:18px 22px 20px;background:var(--bg3);border:1px solid var(--line2);color:var(--text);scrollbar-color:var(--line2) transparent}
+.footerDialog::backdrop{background:rgba(5,4,3,.8)}
+.footerDialog .popHead{justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:10px}
+.footerDialog .empty{color:var(--muted)}
+.creditsList{display:flex;flex-wrap:wrap;gap:6px 14px;list-style:none;margin:8px 0 14px}
+#creditsDialog p + p{margin-top:10px}
+.announcement + .announcement{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.announcement time{color:var(--muted)}
+.announcement h3{color:var(--gold);font-family:var(--serif);font-size:var(--f2);margin:2px 0 6px}
+.announcement p + p{margin-top:6px}
+@media (min-width:1024px){
+  body{overflow-y:auto}
+  #app{
+    --bar-height:52px;
+    height:auto;
+    grid-template-rows:var(--bar-height) calc(100vh - var(--bar-height)) auto;
+    grid-template-rows:var(--bar-height) calc(100dvh - var(--bar-height)) auto;
+  }
+  #siteFooter{gap:16px 32px;padding:20px clamp(32px,4vw,72px) calc(20px + env(safe-area-inset-bottom))}
+  .footerLinks,.footerContact{gap:8px 18px}
+  .footerAuthors{gap:12px}
+  #siteFooter .gbtn{padding:8px 16px}
+  #siteFooter .authorLink{width:44px;min-height:40px;padding:0}
+}
+@media (min-width:1024px) and (max-height:500px){
+  #app{--bar-height:calc(44px + env(safe-area-inset-top))}
+}
+@media (max-width:600px){
+  #siteFooter{justify-content:center;padding-inline:max(8px,env(safe-area-inset-left)) max(8px,env(safe-area-inset-right))}
+  .footerContact{order:1;justify-content:center;flex-basis:100%}
+}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
 }
@@ -405,13 +444,33 @@ details[open].appendix summary::after{content:"－"}
     </div>
   </section>
   </main>
+
+  <footer id="siteFooter">
+    <div class="footerLinks">
+      <button type="button" class="gbtn fr cut" id="languageBtn" aria-label="语言：简体中文" aria-haspopup="dialog">简体中文 ▾</button>
+      <button type="button" class="gbtn fr cut" id="updatesBtn" aria-haspopup="dialog">更新公告</button>
+      <button type="button" class="gbtn fr cut" id="creditsBtn" aria-haspopup="dialog">特别鸣谢</button>
+    </div>
+    <div class="footerContact">
+      <b>联系我们</b>
+      <div class="footerContactDetails">
+        <span>QQ群</span><span>864380934</span>
+        <span>Email：</span><span>3752433122@qq.com</span>
+      </div>
+    </div>
+    <div class="footerAuthors">
+      <b>作者主页</b>
+      <svg width="0" height="0" aria-hidden="true" style="position:absolute"><symbol id="biliTv" viewBox="0 0 24 24"><path d="m8 3 4 4 4-4"/><rect x="3" y="7" width="18" height="13" rx="3"/><path d="m7.5 13 2-1m5 0 2 1M10 16l2 1 2-1M7 20v1m10-1v1"/></symbol></svg>
+      <a class="authorLink gbtn fr cut" href="https://space.bilibili.com/519110821?spm_id_from=333.1007.0.0" target="_blank" rel="noopener noreferrer" aria-label="作者主页 1（哔哩哔哩，新标签页）" title="作者主页 1"><svg aria-hidden="true" viewBox="0 0 24 24"><use href="#biliTv"/></svg></a>
+      <button type="button" class="authorLink gbtn fr cut" aria-label="作者主页 2（待补充）" title="作者主页 2 待补充" disabled><svg aria-hidden="true" viewBox="0 0 24 24"><use href="#biliTv"/></svg></button>
+    </div>
+  </footer>
 </div>
 
 <div id="hunterPop" class="overlay">
   <div class="pop dark fr cut">
     <div class="popHead"><span class="k">监管者</span><input id="hunterSearch" placeholder="搜索" autocomplete="off"></div>
     <div id="hunterGrid"></div>
-    <div id="segrow"></div>
   </div>
 </div>
 
@@ -429,12 +488,72 @@ details[open].appendix summary::after{content:"－"}
   </div>
 </div>
 
+<dialog id="languageDialog" class="footerDialog" aria-labelledby="languageTitle">
+  <form method="dialog" class="popHead">
+    <h2 id="languageTitle" class="k">语言</h2>
+    <button class="gbtn fr cut">关闭</button>
+  </form>
+  <form method="dialog">
+    <button class="gbtn fr cut on" autofocus>简体中文</button>
+  </form>
+</dialog>
+
+<dialog id="updatesDialog" class="footerDialog" aria-labelledby="updatesTitle">
+  <form method="dialog" class="popHead">
+    <h2 id="updatesTitle" class="k">更新公告</h2>
+    <button class="gbtn fr cut" autofocus>关闭</button>
+  </form>
+  <div id="updatesList"><p class="empty">暂无更新公告。</p></div>
+</dialog>
+
+<dialog id="creditsDialog" class="footerDialog" aria-labelledby="creditsTitle">
+  <form method="dialog" class="popHead">
+    <h2 id="creditsTitle" class="k">特别鸣谢</h2>
+    <button class="gbtn fr cut" autofocus>关闭</button>
+  </form>
+  <p>数据来源</p>
+  <ul class="creditsList">
+    <li>@奋斗的小猴儿</li>
+    <li>@日暮戈薇吖丶</li>
+    <li>@sprtea</li>
+    <li>@星海诚2100</li>
+    <li>@此言Cyan</li>
+    <li>@瘾酒ouo</li>
+    <li>@南笙oxo</li>
+    <li>@蜡笔小幽ouo</li>
+    <li>@yeusaa096</li>
+    <li>@狂暴的农村人66</li>
+    <li>@b站x电竞雾山</li>
+    <li>@妙妙ouo</li>
+    <li>@予澪</li>
+    <li>@轨迹迹ovo</li>
+    <li>@时崎雨梦</li>
+    <li>@千久Allie</li>
+    <li>@梦境_iDentity</li>
+    <li>@暴走兰斯</li>
+    <li>@冬日限定丶田</li>
+    <li>@情总dd</li>
+    <li>@削嚣</li>
+    <li>@安心心心1</li>
+    <li>@ss丶pp丿</li>
+    <li>@虚妄Omniscient</li>
+    <li>@支南今晚做噩梦</li>
+    <li>@鸽子大渣男</li>
+    <li>@来照雪oxo</li>
+    <li>@采风qvq</li>
+  </ul>
+  <p>排名不分先后。</p>
+  <p>本次数据收录逻辑是：先找熟悉的屠榜主播，再找奋斗的小猴的视频，最后再通过b站搜索。所以您的数据未被收录可能并不是您的水平不足，欢迎各大角色屠榜前列玩家自荐！</p>
+  <p>只要您的视频满足，在b站发布，且大部分视频均为开局70s内有清晰选点即可，有角色大电影的也欢迎投稿！</p>
+  <p>投稿方式：通过页脚邮箱发送您的b站id或者直接在b站评论区自荐</p>
+</dialog>
+
+<script src="announcements.js"></script>
 <script>
 const DATA = __DATA__;
 const GEO = {"不归林": {"ar": 1.0322, "cells": {"11": [-0.0, -0.01, 33.56, 33.49], "12": [33.33, -0.01, 33.55, 33.49], "13": [66.65, -0.0, 33.32, 33.49], "21": [0.0, 33.25, 33.56, 33.49], "22": [33.33, 33.25, 33.55, 33.49], "23": [66.66, 33.26, 33.32, 33.49], "31": [0.0, 66.52, 33.56, 33.5], "32": [33.34, 66.51, 33.55, 33.49], "33": [66.66, 66.51, 33.32, 33.49]}}, "军工厂": {"ar": 1.1441, "cells": {"11": [0.04, 0.01, 33.47, 33.35], "12": [33.26, 0.01, 33.7, 33.36], "13": [66.73, 0.01, 33.26, 33.37], "21": [0.07, 33.09, 33.45, 33.58], "22": [33.28, 33.1, 33.68, 33.59], "23": [66.72, 33.11, 33.24, 33.6], "31": [0.1, 66.39, 33.43, 33.55], "32": [33.29, 66.41, 33.66, 33.56], "33": [66.71, 66.43, 33.22, 33.56]}}, "唐人街": {"ar": 1.1493, "cells": {"11": [-0.03, 0.02, 33.66, 33.43], "12": [33.4, 0.02, 33.43, 33.43], "13": [66.6, 0.03, 33.43, 33.43], "21": [-0.03, 33.18, 33.66, 33.69], "22": [33.4, 33.19, 33.43, 33.69], "23": [66.59, 33.19, 33.43, 33.69], "31": [-0.03, 66.6, 33.66, 33.42], "32": [33.4, 66.61, 33.43, 33.42], "33": [66.59, 66.61, 33.43, 33.42]}}, "圣心医院": {"ar": 1.0795, "cells": {"11": [0.04, 0.43, 33.17, 33.86], "12": [32.93, 0.19, 35.58, 33.99], "13": [68.07, -0.03, 31.93, 34.09], "21": [0.14, 33.92, 33.03, 33.2], "22": [32.89, 33.8, 35.42, 33.32], "23": [67.87, 33.69, 31.78, 33.43], "31": [0.24, 66.87, 32.88, 32.91], "32": [32.84, 66.86, 35.27, 33.02], "33": [67.67, 66.86, 31.64, 33.13]}}, "月亮河公园": {"ar": 1.7179, "cells": {"11": [-0.0, 0.06, 25.08, 33.3], "12": [24.84, 0.05, 25.52, 33.33], "13": [50.14, 0.03, 25.12, 33.35], "14": [75.05, 0.02, 24.95, 33.37], "21": [0.04, 33.0, 25.07, 33.64], "22": [24.87, 33.0, 25.51, 33.66], "23": [50.15, 33.01, 25.11, 33.69], "24": [75.05, 33.02, 24.93, 33.71], "31": [0.08, 66.24, 25.05, 33.62], "32": [24.9, 66.27, 25.49, 33.65], "33": [50.17, 66.3, 25.09, 33.67], "34": [75.05, 66.34, 24.92, 33.69]}}, "永眠镇": {"ar": 0.9436, "cells": {"11": [-0.01, 0.04, 33.52, 33.34], "12": [33.2, 0.03, 33.84, 33.34], "13": [66.72, 0.03, 33.25, 33.34], "21": [-0.01, 33.09, 33.51, 33.6], "22": [33.19, 33.09, 33.83, 33.61], "23": [66.7, 33.08, 33.24, 33.61], "31": [-0.01, 66.41, 33.5, 33.58], "32": [33.18, 66.4, 33.82, 33.58], "33": [66.68, 66.4, 33.23, 33.59]}}, "湖景村": {"ar": 1.1603, "cells": {"11": [0.02, 0.0, 25.13, 33.56], "12": [24.87, -0.0, 25.41, 33.57], "13": [50.0, -0.0, 24.88, 33.58], "14": [74.6, -0.01, 25.45, 33.59], "21": [0.04, 33.24, 25.12, 33.54], "22": [24.88, 33.25, 25.4, 33.55], "23": [50.0, 33.25, 24.87, 33.55], "24": [74.58, 33.26, 25.44, 33.56], "31": [0.06, 66.44, 25.11, 33.51], "32": [24.89, 66.46, 25.39, 33.52], "33": [50.0, 66.48, 24.85, 33.53], "34": [74.57, 66.49, 25.43, 33.54]}}, "红教堂": {"ar": 1.062, "cells": {"11": [0.11, 7.86, 33.46, 30.74], "12": [33.32, 4.08, 33.43, 30.73], "13": [66.46, 0.04, 33.44, 30.71], "21": [0.08, 38.32, 33.49, 31.09], "22": [33.32, 34.52, 33.47, 31.34], "23": [66.49, 30.47, 33.47, 31.32], "31": [0.04, 69.11, 33.53, 30.89], "32": [33.32, 65.57, 33.5, 31.14], "33": [66.53, 61.49, 33.51, 30.85]}}, "里奥的回忆": {"ar": 1.1381, "cells": {"11": [-0.01, -0.02, 33.26, 33.33], "12": [33.02, -0.02, 33.74, 33.34], "13": [66.52, -0.02, 33.51, 33.34], "21": [0.0, 33.05, 33.26, 33.86], "22": [33.02, 33.05, 33.73, 33.87], "23": [66.52, 33.05, 33.51, 33.87], "31": [0.01, 66.63, 33.26, 33.33], "32": [33.03, 66.64, 33.73, 33.33], "33": [66.52, 66.65, 33.51, 33.34]}}};
 const MAPS = DATA.maps, HUNTERS = DATA.hunters, RECS = DATA.records, COLS = DATA.cols, META = DATA.meta;
-const FILTERS = [['all','全部'],['reviewed','已审核'],['watch','观战'],['mine','本人录像']];
-const state = {step:1, map:-1, hunter:-1, filter:'all', input:[], myPick:null, tool:'survivor'};
+const state = {step:1, map:-1, hunter:-1, input:[], myPick:null, tool:'survivor'};
 const $ = id => document.getElementById(id);
 const fmt = k => '(' + (k/10|0) + ',' + (k%10) + ')';
 const keyOf = s => s.slice().sort((a,b)=>a-b).join('-');
@@ -446,15 +565,12 @@ const store = {
 };
 (function restore(){
   const h = HUNTERS.indexOf(store.get('hunter')); if (h>=0) state.hunter = h;
-  const f = store.get('filter'); if (FILTERS.some(x => x[0]===f)) state.filter = f;
 })();
 
 /* ---------- 数据派生 ---------- */
 function pool(){
   return RECS.filter(r => r[0]===state.map
-    && (state.hunter<0 || r[1]===state.hunter)
-    && (state.filter==='all' || (state.filter==='reviewed' && (r[7]&1))
-        || (state.filter==='watch' && !(r[7]&2)) || (state.filter==='mine' && (r[7]&2))));
+    && (state.hunter<0 || r[1]===state.hunter));
 }
 /* 游戏规定双方不重复选区：剔除当前求生者已占格，剩余格按权重重新归一化（全被剔除时 score 为空，上层走无匹配） */
 function normFree(score){
@@ -566,19 +682,9 @@ function renderHunters(q){
       renderSlot(); renderAll();
     }));
 }
-function renderSegs(){
-  $('segrow').innerHTML = FILTERS.map(f =>
-    '<button class="seg'+(state.filter===f[0]?' on':'')+'" data-k="'+f[0]+'">'+f[1]+'</button>').join('');
-  document.querySelectorAll('#segrow .seg').forEach(b =>
-    b.addEventListener('click', () => {
-      state.filter = b.dataset.k;
-      store.set('filter', state.filter);
-      renderSegs(); renderAll();
-    }));
-}
 $('hSlot').addEventListener('click', () => {
   $('hunterSearch').value = '';
-  renderHunters(''); renderSegs();
+  renderHunters('');
   $('hunterPop').classList.add('show');
 });
 $('hunterPop').addEventListener('click', e => { if (e.target===$('hunterPop')) $('hunterPop').classList.remove('show'); });
@@ -727,6 +833,32 @@ $('noticeStats').innerHTML =
 $('noticeBtn').addEventListener('click', () => $('notice').classList.add('show'));
 $('noticeClose').addEventListener('click', () => $('notice').classList.remove('show'));
 $('notice').addEventListener('click', e => { if(e.target===$('notice')) $('notice').classList.remove('show'); });
+
+/* ---------- 页脚 ---------- */
+const announcements = window.SITE_ANNOUNCEMENTS || [];
+if (announcements.length){
+  const list = $('updatesList');
+  list.replaceChildren();
+  for (const {date, title, paragraphs} of announcements){
+    const article = document.createElement('article');
+    article.className = 'announcement';
+    const time = document.createElement('time');
+    time.dateTime = date;
+    time.textContent = date;
+    const heading = document.createElement('h3');
+    heading.textContent = title;
+    article.append(time, heading);
+    for (const text of paragraphs){
+      const paragraph = document.createElement('p');
+      paragraph.textContent = text;
+      article.append(paragraph);
+    }
+    list.append(article);
+  }
+}
+$('languageBtn').addEventListener('click', () => $('languageDialog').showModal());
+$('updatesBtn').addEventListener('click', () => $('updatesDialog').showModal());
+$('creditsBtn').addEventListener('click', () => $('creditsDialog').showModal());
 
 /* ---------- 启动 ---------- */
 renderMaps();
