@@ -28,6 +28,18 @@ COLS4 = {"湖景村", "月亮河公园"}
 # 同一角色的多个批次文件夹合并
 GROUP_OVERRIDE = {"伞": "宿伞"}
 
+MAP_ORDER = (
+    "军工厂", "圣心医院", "红教堂", "湖景村", "月亮河公园",
+    "里奥的回忆", "永眠镇", "唐人街", "不归林",
+)
+HUNTER_ORDER = (
+    "厂长", "小丑", "鹿头", "杰克", "蜘蛛", "红蝶", "黄衣之主", "宿伞之魂",
+    "摄影师", "疯眼", "梦之女巫", "爱哭鬼", "孽蜥", "红夫人", "26号守卫", "使徒",
+    "小提琴家", "雕刻家", "博士", "破轮", "渔女", "蜡像师", "噩梦", "记录员",
+    "隐士", "守夜人", "歌剧演员", "愚人金", "时空之影", "跛脚羊", "喧嚣", "杂货商",
+    "台球手", "女王蜂", "牙医",
+)
+
 S_X = ["求生者%d_x" % i for i in range(1, 5)]
 S_Y = ["求生者%d_y" % i for i in range(1, 5)]
 
@@ -98,8 +110,9 @@ def main():
             (r.get("视频文件") or "").strip(),
         ])
 
-    maps_sorted = sorted(maps)
-    hunters_sorted = sorted(hunters)
+    # 按指定顺序显示，尚未列出的新地图和角色追加到末尾。
+    maps_sorted = [m for m in MAP_ORDER if m in maps] + sorted(set(maps) - set(MAP_ORDER))
+    hunters_sorted = [h for h in HUNTER_ORDER if h in hunters] + sorted(set(hunters) - set(HUNTER_ORDER))
     # 按名称表重排索引
     mi = {m: i for i, m in enumerate(maps_sorted)}
     hi = {h: i for i, h in enumerate(hunters_sorted)}
