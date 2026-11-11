@@ -10,7 +10,8 @@
   1. 只保留「状态 = ok」且五个坐标齐全、坐标未越界的记录；
   2. 角色按数据文件夹（CSV 文件名去掉末尾数字）归类，显示名取该组「监管者名字」众数，
      避免观战视频标题识别串角色带来的噪声；
-  3. 坐标为 (行, 列)，从 1 开始；绝大多数地图 3x3，湖景村 / 月亮河公园为 3x4。
+  3. 坐标为 (行, 列)，从 1 开始；绝大多数地图 3x3，湖景村 / 月亮河公园为完整 3x4，
+     永眠镇为 3x3 主体 + 右上角额外一格 (1,4)（第 4 列仅此一格有效）。
 """
 import collections
 import csv
@@ -23,8 +24,10 @@ CSV_DIR = os.path.join(BASE, "CSV")
 TEMPLATE = os.path.join(BASE, "template.html")
 OUTPUT = os.path.join(BASE, "index.html")
 
-# 3x4 地图（其余按 3x3 处理）
-COLS4 = {"湖景村", "月亮河公园"}
+# 页面按 4 列排版的地图；湖景村 / 月亮河公园是完整 3x4，永眠镇仅右上角多一格
+COLS4 = {"湖景村", "月亮河公园", "永眠镇"}
+# 不规则分区：这些地图第 4 列只有列出的格子有效，其余 (2,4)/(3,4) 等视为越界
+EXTRA_CELLS = {"永眠镇": {14}}
 # 同一角色的多个批次文件夹合并
 GROUP_OVERRIDE = {"伞": "宿伞"}
 
@@ -84,6 +87,10 @@ def main():
             dropped["地图未识别"] += 1
             continue
         cols = 4 if m in COLS4 else 3
+        valid = {rr * 10 + cc for rr in range(1, 4) for cc in range(1, cols + 1)}
+        if m in EXTRA_CELLS:
+            # 不规则分区：以 3x3 主体为底，只补上额外存在的格子
+            valid = {rr * 10 + cc for rr in range(1, 4) for cc in range(1, 4)} | EXTRA_CELLS[m]
         try:
             s = [int(r[x]) * 10 + int(r[y]) for x, y in zip(S_X, S_Y)]
             h = int(r["监管者_x"]) * 10 + int(r["监管者_y"])
@@ -91,7 +98,7 @@ def main():
             dropped["坐标非数字"] += 1
             continue
         coords = s + [h]
-        if any(not (1 <= v // 10 <= 3 and 1 <= v % 10 <= cols) for v in coords):
+        if any(v not in valid for v in coords):
             dropped["坐标越界（疑似识别误差）"] += 1
             continue
         hname = names[r["_group"]]
