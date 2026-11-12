@@ -7,7 +7,8 @@
 输出：<脚本目录>\\index.html（数据内嵌，可离线打开、可直接发布）
 
 数据口径：
-  1. 只保留「状态 = ok」且五个坐标齐全、坐标未越界的记录；
+  1. 只保留「状态 = ok」且五个坐标齐全、且都落在该图合法格集合内的记录（合法格见 valid_cells，
+     随 payload.cells 下发前端，前端一律按此列表遍历格子）；
   2. 角色按数据文件夹（CSV 文件名去掉末尾数字）归类，显示名取该组「监管者名字」众数，
      避免观战视频标题识别串角色带来的噪声；
   3. 坐标为 (行, 列)，从 1 开始；绝大多数地图 3x3，湖景村 / 月亮河公园为完整 3x4，
@@ -45,6 +46,14 @@ HUNTER_ORDER = (
 
 S_X = ["求生者%d_x" % i for i in range(1, 5)]
 S_Y = ["求生者%d_y" % i for i in range(1, 5)]
+
+
+def valid_cells(m):
+    """每张图的合法格集合（行*10+列）。不规则分区以 3x3 主体为底，只补上额外存在的格子。"""
+    if m in EXTRA_CELLS:
+        return {r * 10 + c for r in range(1, 4) for c in range(1, 4)} | EXTRA_CELLS[m]
+    cols = 4 if m in COLS4 else 3
+    return {r * 10 + c for r in range(1, 4) for c in range(1, cols + 1)}
 
 
 def load_rows():
@@ -86,11 +95,7 @@ def main():
         if not m or m == "未识别":
             dropped["地图未识别"] += 1
             continue
-        cols = 4 if m in COLS4 else 3
-        valid = {rr * 10 + cc for rr in range(1, 4) for cc in range(1, cols + 1)}
-        if m in EXTRA_CELLS:
-            # 不规则分区：以 3x3 主体为底，只补上额外存在的格子
-            valid = {rr * 10 + cc for rr in range(1, 4) for cc in range(1, 4)} | EXTRA_CELLS[m]
+        valid = valid_cells(m)
         try:
             s = [int(r[x]) * 10 + int(r[y]) for x, y in zip(S_X, S_Y)]
             h = int(r["监管者_x"]) * 10 + int(r["监管者_y"])
@@ -131,6 +136,7 @@ def main():
         "maps": maps_sorted,
         "hunters": hunters_sorted,
         "cols": {m: (4 if m in COLS4 else 3) for m in maps_sorted},
+        "cells": {m: sorted(valid_cells(m)) for m in maps_sorted},
         "records": records,
         "meta": {
             "raw": len(rows),
