@@ -7,10 +7,12 @@
 输出：<脚本目录>\\index.html（数据内嵌，可离线打开、可直接发布）
 
 数据口径：
-  1. 只保留「状态 = ok」且五个坐标齐全、坐标未越界的记录；
+  1. 只保留「状态 = ok」且五个坐标齐全、且都落在该图合法格集合内的记录（合法格见 valid_cells，
+     随 payload.cells 下发前端，前端一律按此列表遍历格子）；
   2. 角色按数据文件夹（CSV 文件名去掉末尾数字）归类，显示名取该组「监管者名字」众数，
      避免观战视频标题识别串角色带来的噪声；
-  3. 坐标为 (行, 列)，从 1 开始；绝大多数地图 3x3，湖景村 / 月亮河公园为 3x4。
+  3. 坐标为 (行, 列)，从 1 开始；绝大多数地图 3x3，湖景村 / 月亮河公园为完整 3x4，
+     永眠镇为 3x3 主体 + 右上角额外一格 (1,4)（第 4 列仅此一格有效）。
 """
 import collections
 import csv
@@ -23,13 +25,35 @@ CSV_DIR = os.path.join(BASE, "CSV")
 TEMPLATE = os.path.join(BASE, "template.html")
 OUTPUT = os.path.join(BASE, "index.html")
 
-# 3x4 地图（其余按 3x3 处理）
-COLS4 = {"湖景村", "月亮河公园"}
+# 页面按 4 列排版的地图；湖景村 / 月亮河公园是完整 3x4，永眠镇仅右上角多一格
+COLS4 = {"湖景村", "月亮河公园", "永眠镇"}
+# 不规则分区：这些地图第 4 列只有列出的格子有效，其余 (2,4)/(3,4) 等视为越界
+EXTRA_CELLS = {"永眠镇": {14}}
 # 同一角色的多个批次文件夹合并
 GROUP_OVERRIDE = {"伞": "宿伞"}
 
+MAP_ORDER = (
+    "军工厂", "圣心医院", "红教堂", "湖景村", "月亮河公园",
+    "里奥的回忆", "永眠镇", "唐人街", "不归林",
+)
+HUNTER_ORDER = (
+    "厂长", "小丑", "鹿头", "杰克", "蜘蛛", "红蝶", "黄衣之主", "宿伞之魂",
+    "摄影师", "疯眼", "梦之女巫", "爱哭鬼", "孽蜥", "红夫人", "26号守卫", "使徒",
+    "小提琴家", "雕刻家", "博士", "破轮", "渔女", "蜡像师", "噩梦", "记录员",
+    "隐士", "守夜人", "歌剧演员", "愚人金", "时空之影", "跛脚羊", "喧嚣", "杂货商",
+    "台球手", "女王蜂", "牙医",
+)
+
 S_X = ["求生者%d_x" % i for i in range(1, 5)]
 S_Y = ["求生者%d_y" % i for i in range(1, 5)]
+
+
+def valid_cells(m):
+    """每张图的合法格集合（行*10+列）。不规则分区以 3x3 主体为底，只补上额外存在的格子。"""
+    if m in EXTRA_CELLS:
+        return {r * 10 + c for r in range(1, 4) for c in range(1, 4)} | EXTRA_CELLS[m]
+    cols = 4 if m in COLS4 else 3
+    return {r * 10 + c for r in range(1, 4) for c in range(1, cols + 1)}
 
 
 def load_rows():
@@ -71,7 +95,7 @@ def main():
         if not m or m == "未识别":
             dropped["地图未识别"] += 1
             continue
-        cols = 4 if m in COLS4 else 3
+        valid = valid_cells(m)
         try:
             s = [int(r[x]) * 10 + int(r[y]) for x, y in zip(S_X, S_Y)]
             h = int(r["监管者_x"]) * 10 + int(r["监管者_y"])
@@ -79,7 +103,7 @@ def main():
             dropped["坐标非数字"] += 1
             continue
         coords = s + [h]
-        if any(not (1 <= v // 10 <= 3 and 1 <= v % 10 <= cols) for v in coords):
+        if any(v not in valid for v in coords):
             dropped["坐标越界（疑似识别误差）"] += 1
             continue
         hname = names[r["_group"]]
@@ -98,8 +122,9 @@ def main():
             (r.get("视频文件") or "").strip(),
         ])
 
-    maps_sorted = sorted(maps)
-    hunters_sorted = sorted(hunters)
+    # 按指定顺序显示，尚未列出的新地图和角色追加到末尾。
+    maps_sorted = [m for m in MAP_ORDER if m in maps] + sorted(set(maps) - set(MAP_ORDER))
+    hunters_sorted = [h for h in HUNTER_ORDER if h in hunters] + sorted(set(hunters) - set(HUNTER_ORDER))
     # 按名称表重排索引
     mi = {m: i for i, m in enumerate(maps_sorted)}
     hi = {h: i for i, h in enumerate(hunters_sorted)}
@@ -111,6 +136,7 @@ def main():
         "maps": maps_sorted,
         "hunters": hunters_sorted,
         "cols": {m: (4 if m in COLS4 else 3) for m in maps_sorted},
+        "cells": {m: sorted(valid_cells(m)) for m in maps_sorted},
         "records": records,
         "meta": {
             "raw": len(rows),
