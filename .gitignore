@@ -1,3 +1,4 @@
 _shots/
 __pycache__/
 *.bak-*
+dist/
